@@ -1,6 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsArray, IsDateString, IsNumber, IsDate } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsArray,
+  IsDateString,
+  IsNumber,
+  IsDate,
+} from 'class-validator';
 
 export class CreateCardDto {
   @ApiProperty({ description: 'Información del PDF de la carta' })
@@ -14,29 +23,36 @@ export class CreateCardDto {
   codigoRecibido: string;
 
   @ApiProperty({
-      description: 'Fecha de ingreso de la carta',
-      example: '03-02-2024'
-    })
-    @Transform(({ value }) => new Date(value)) // Convierte el string a Date
-    @IsDate()
-    @Type(() => Date)
-    fechaIngreso: Date;
+    description: 'Fecha de ingreso de la carta',
+    example: '03-02-2024',
+  })
+  @Transform(({ value }) => new Date(value)) // Convierte el string a Date
+  @IsDate()
+  @Type(() => Date)
+  fechaIngreso: Date;
 
   @ApiProperty({ description: 'Destinatario de la carta' })
   @IsNotEmpty()
-  @IsString()
-  destinatario: string;
+  @IsNumber()
+  @Type(() => Number)
+  destinatario: number;
 
   @ApiProperty({ description: 'Asunto de la carta' })
   @IsNotEmpty()
   @IsString()
   asunto: string;
 
-  @ApiProperty({ description: 'Indica si la carta es confidencial', default: false })
+  @ApiProperty({
+    description: 'Indica si la carta es confidencial',
+    default: false,
+  })
   @IsBoolean()
   esConfidencial: boolean;
 
-  @ApiProperty({ description: 'Indica si la carta ha sido devuelta', default: false })
+  @ApiProperty({
+    description: 'Indica si la carta ha sido devuelta',
+    default: false,
+  })
   @IsBoolean()
   devuelto: boolean;
 
@@ -59,17 +75,27 @@ export class CreateCardDto {
   @IsString()
   nivelImpacto?: string;
 
-  @ApiProperty({ description: 'Referencia a la carta anterior (opcional)', required: false })
+  @ApiProperty({
+    description: 'Referencia a la carta anterior (opcional)',
+    required: false,
+  })
   @IsOptional()
   @IsNumber()
   referencia?: number; // Cambia a `number` si estás usando `BigInt` en el frontend o backend
 
-  @ApiProperty({ description: 'Correos en copia de la carta', type: [String], default: [] })
+  @ApiProperty({
+    description: 'Correos en copia de la carta',
+    type: [String],
+    default: [],
+  })
   @IsArray()
   @IsString({ each: true })
   correosCopia: string[];
 
-  @ApiProperty({ description: 'ID del área responsable de la carta', required: false })
+  @ApiProperty({
+    description: 'ID del área responsable de la carta',
+    required: false,
+  })
   @IsOptional()
   areaResponsableId?: bigint;
 
@@ -81,11 +107,17 @@ export class CreateCardDto {
   @IsOptional()
   empresaId?: bigint;
 
-  @ApiProperty({ description: 'ID del tema relacionado con la carta', required: false })
+  @ApiProperty({
+    description: 'ID del tema relacionado con la carta',
+    required: false,
+  })
   @IsOptional()
   temaId?: bigint;
 
-  @ApiProperty({ description: 'Indica si la carta tiene vencimiento', default: false })
+  @ApiProperty({
+    description: 'Indica si la carta tiene vencimiento',
+    default: false,
+  })
   @IsBoolean()
   vencimiento: boolean;
 
@@ -95,7 +127,10 @@ export class CreateCardDto {
   @Type(() => Date)
   fechadevencimiento?: Date;
 
-  @ApiProperty({ description: 'Indica si la carta es informativa', default: false })
+  @ApiProperty({
+    description: 'Indica si la carta es informativa',
+    default: false,
+  })
   @IsBoolean()
   informativo: boolean;
 
@@ -103,18 +138,36 @@ export class CreateCardDto {
   @IsBoolean()
   urgente: boolean;
 
-  @ApiProperty({ description: 'Borrador de la respuesta de la carta', required: false })
+  @ApiProperty({
+    description: 'Borrador de la respuesta de la carta',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   cartaborrador?: string;
 
-  @ApiProperty({ description: 'Comentario adicional de la carta', required: false })
+  @ApiProperty({
+    description: 'Comentario adicional de la carta',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   comentario?: string;
 
-  @ApiProperty({ description: 'Observaciones si la carta se devuelve', required: false })
+  @ApiProperty({
+    description: 'Observaciones si la carta se devuelve',
+    required: false,
+  })
   @IsOptional()
   @IsString()
   observaciones?: string;
+
+  @ApiProperty({
+    description: 'Archivos adjuntos de la carta',
+    type: [String],
+    default: [],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  archivosAdjuntos: string[];
 }

@@ -68,16 +68,25 @@ model Usuario {
   cartas      Carta[]
 }
 
+model CartaAdjunto {
+  id       BigInt @id @default(autoincrement())
+  cartaId  BigInt
+  filepath String
+  nombre   String
+  Carta    Carta  @relation(fields: [cartaId], references: [id])
+}
+
 model Carta {
   id                BigInt           @id @default(autoincrement())
   pdfInfo           String
   codigoRecibido    String
   fechaIngreso      DateTime         @default(now())
-  destinatario      String
-  asunto            String
+  destinatario      BigInt
   esConfidencial    Boolean
+  asunto            String
   devuelto          Boolean          @default(false)
   estado            String           @default("Ingresado")
+  archivosAdjuntos  String[]
   //referencia        String?
   resumenRecibido   String?
   tema              String?
@@ -110,6 +119,8 @@ model Carta {
   cartaEnviada    String?
   comentarioCargo String?
 
+  Destinatario Destinatario @relation(fields: [destinatario], references: [id])
+
   //Usado en función de si la carta fue emitida o fue una carta que llegó
   emision Boolean @default(false)
 
@@ -117,7 +128,7 @@ model Carta {
   partida Boolean @default(false)
 
   //Campos para más archivos
-  pdfInfo2       String?   
+  pdfInfo2       String?
   pdfInfoArreglo String[] @default([])
   // Relacion referencial con una carta anterior
   referencia     BigInt? // Campo opcional para el ID de la carta anterior
@@ -127,7 +138,8 @@ model Carta {
   // Recibido o Enviado
   tipo String @default("Recibido")
 
-  active Boolean @default(true)
+  active       Boolean        @default(true)
+  CartaAdjunto CartaAdjunto[]
 }
 
 model Tema {
@@ -138,8 +150,9 @@ model Tema {
 }
 
 model Destinatario {
-  id      BigInt @id @default(autoincrement())
+  id      BigInt  @id @default(autoincrement())
   tipodoc String
   numdoc  String
   nombre  String
+  Carta   Carta[]
 }

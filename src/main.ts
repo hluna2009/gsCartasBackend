@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 //import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import * as fs from 'fs';
 import * as path from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 // Logger personalizado que escribe en consola y en archivo
 class FileLogger extends ConsoleLogger implements LoggerService {
@@ -16,7 +17,7 @@ class FileLogger extends ConsoleLogger implements LoggerService {
     super(context);
     this.logFilePath = path.join(process.cwd(), 'access.log');
     this.logStream = fs.createWriteStream(this.logFilePath, { flags: 'a' });
-    
+
     // Manejar errores en el stream
     this.logStream.on('error', (err) => {
       super.error(`Error writing to log file: ${err.message}`, err.stack);
@@ -48,7 +49,12 @@ class FileLogger extends ConsoleLogger implements LoggerService {
     this.writeToFile('VERBOSE', message, context);
   }
 
-  private writeToFile(level: string, message: any, context?: string, trace?: string) {
+  private writeToFile(
+    level: string,
+    message: any,
+    context?: string,
+    trace?: string,
+  ) {
     const timestamp = new Date().toISOString();
     const logEntry = `${timestamp} [${level}] ${context ? `[${context}] ` : ''}${message}\n${
       trace ? `${trace}\n` : ''
@@ -62,22 +68,25 @@ class FileLogger extends ConsoleLogger implements LoggerService {
   }
 }
 
-
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: new FileLogger()
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new FileLogger(),
   });
-  await app.enableCors()
+
+  app.setBaseViewsDir(path.join(__dirname, '..', 'src', 'mail', 'templates'));
+  app.setViewEngine('hbs');
+
+  await app.enableCors();
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
       transformOptions: {
-        enableImplicitConversion: true
+        enableImplicitConversion: true,
       },
-    })
+    }),
   );
-  app.useGlobalInterceptors(new BigIntInterceptor())
+  app.useGlobalInterceptors(new BigIntInterceptor());
   //app.useGlobalFilters(new HttpExceptionFilter())
 
   const config = new DocumentBuilder()
@@ -87,15 +96,14 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  const documentFactory = () => SwaggerModule.createDocument(app, config)
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory, {
     swaggerOptions: {
-      defaultModelRendering: 'model'
-    }
-  })
-
+      defaultModelRendering: 'model',
+    },
+  });
 
   await app.listen(process.env.PORT ?? 3003);
-  console.log(`Application is running on: ${await app.getUrl()}`)
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

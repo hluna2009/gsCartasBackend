@@ -37,16 +37,38 @@ export class MailController {
       fechaIngreso: '2025-04-28',
       resumenRecibido: 'asdasd',
       urgente: false,
+      archivosAdjuntos: ['asdasd', 'asdasd'],
+      pdfInfo: 'asdasd.pdf',
     };
     return res.render(template, {
       message: 'Hola Elvis, tienes una carta urgente que atender',
-      link: 'https://www.gruposur.com/portal',
+      link: `${process.env.HOST_API}`,
       asunto: carta.asunto,
       estado: carta.estado,
       fechaIngreso: carta.fechaIngreso,
       resumenRecibido: carta.resumenRecibido,
       urgente: carta.urgente,
       year: new Date().getFullYear(),
+      archivosAdjuntos: carta.archivosAdjuntos.map(
+        (nombre) => `${process.env.HOST_API}/pdfs/${nombre}`,
+      ),
+      pdfInfo: `${process.env.HOST_API}/pdfs/${carta.pdfInfo}`,
+
+      nombre: 'asdasd',
+      totalCartas: 1,
+      cartas: [
+        {
+          id: 1,
+          asunto: 'asdasd',
+          resumenRecibido: 'asdasd',
+          fechaIngreso: '2025-04-28',
+          urgente: true,
+          archivosAdjuntos: ['asdasd', 'asdasd'],
+          pdfInfo: 'asdasd.pdf',
+          diasPendiente: 1,
+        },
+      ],
+      fechaActual: new Date().toLocaleDateString(),
     });
   }
 }

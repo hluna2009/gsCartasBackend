@@ -84,6 +84,24 @@
                   <td><strong>Urgente:</strong></td>
                   <td>{{#if urgente}}Sí{{else}}No{{/if}}</td>
                 </tr>
+                {{#if pdfInfo}}
+                  <tr>
+                    <td><strong>PDF:</strong></td>
+                    <td><a href='{{pdfInfo}}' target='_blank'>Ver PDF</a></td>
+                  </tr>
+                {{/if}}
+                {{#if archivosAdjuntos.length}}
+                  <tr>
+                    <td valign='top'><strong>Adjuntos:</strong></td>
+                    <td>
+                      <ul style='padding-left: 16px; margin: 0;'>
+                        {{#each archivosAdjuntos}}
+                          <li><a href='{{this}}' target='_blank'>Archivo adjunto</a></li>
+                        {{/each}}
+                      </ul>
+                    </td>
+                  </tr>
+                {{/if}}
               </table>
             </td>
           </tr>

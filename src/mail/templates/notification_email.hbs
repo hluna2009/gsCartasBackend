@@ -41,12 +41,14 @@
       <table>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Asunto</th>
-            <th>Resumen Recibido</th>
-            <th>Fecha Ingreso</th>
-            <th>Días Pendiente</th>
-            <th>Prioridad</th>
+            <th scope='col'>ID</th>
+            <th scope='col'>Asunto</th>
+            <th scope='col'>Resumen Recibido</th>
+            <th scope='col'>Fecha Ingreso</th>
+            <th scope='col'>Días Pendiente</th>
+            <th scope='col'>Prioridad</th>
+            <th scope='col'>Archivos Adjuntos</th>
+            <th scope='col'>PDF</th>
           </tr>
         </thead>
         <tbody>
@@ -57,9 +59,23 @@
               <td>{{resumenRecibido}}</td>
               <td>{{fechaIngreso}}</td>
               <td>{{diasPendiente}}</td>
-              {{!-- <td class="{{#if (eq prioridad 'Alta')}}priority-high{{else if (eq prioridad 'Media')}}priority-medium{{/if}}">
-                        {{prioridad}}
-                    </td> --}}
+              <td>
+                {{#if urgente}}
+                  <span class='priority-high'>Alta</span>
+                {{else}}
+                  <span class='priority-medium'>Media</span>
+                {{/if}}
+              </td>
+              <td>
+                {{#each archivosAdjuntos}}
+                  <div>
+                    <a href='{{this}}' target='_blank'>{{this}}</a>
+                  </div>
+                {{/each}}
+              </td>
+              <td>
+                <a href='{{pdfInfo}}' target='_blank'>{{pdfInfo}}</a>
+              </td>
             </tr>
           {{/each}}
         </tbody>

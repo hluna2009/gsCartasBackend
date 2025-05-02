@@ -119,7 +119,8 @@ model Carta {
   cartaEnviada    String?
   comentarioCargo String?
 
-  Destinatario Destinatario @relation(fields: [destinatario], references: [id])
+  motivoReapertura String?
+  Destinatario     Destinatario @relation(fields: [destinatario], references: [id])
 
   //Usado en función de si la carta fue emitida o fue una carta que llegó
   emision Boolean @default(false)

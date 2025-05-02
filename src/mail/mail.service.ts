@@ -39,6 +39,8 @@ export class MailService {
               (1000 * 60 * 60 * 24),
           )
         : 'N/A',
+      pdfInfo: carta.pdfInfo,
+      archivosAdjuntos: carta.archivosAdjuntos,
     }));
 
     this.logger.log('Llegamos aqui', cartasParaTemplate.length);

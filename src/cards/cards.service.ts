@@ -14,6 +14,7 @@ import { AssignmentCardDto } from './dto/assignment-card.dto';
 import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CardsService {
@@ -33,7 +34,6 @@ export class CardsService {
     const today = new Date();
     const todayDateString = new Date(today.setHours(23, 59, 59, 999));
 
-    // Procesar cartas nuevas que deben ser enviadas por primera vez
     const newCards = await this.prisma.carta.findMany({
       where: {
         estado: 'Ingresado',
@@ -47,30 +47,24 @@ export class CardsService {
 
     this.logger.log(`Cartas nuevas encontradas: ${newCards.length}`);
 
-    // Procesar cartas pendientes que necesitan recordatorio
-    const pendingCards = await this.prisma.carta.findMany({
-      where: {
-        estado: 'PendienteArea',
-        informativo: false,
-        // fechaEnvio: {
-        //   lt: new Date(new Date().setDate(new Date().getDate() - 1))
-        // }
-      },
-      include: { subArea: true },
-    });
-
-    this.logger.log(`Cartas pendientes encontradas: ${pendingCards.length}`);
+    // const pendingCards = await this.prisma.carta.findMany({
+    //   where: {
+    //     estado: 'Pendiente',
+    //     informativo: false,
+    //   },
+    //   include: { subArea: true },
+    // });
+    //
 
     // Si no hay cartas nuevas ni pendientes, no hacer nada
-    if (newCards.length === 0 && pendingCards.length === 0) {
-      this.logger.debug('No hay cartas para procesar. Saliendo...');
-      return;
-    }
+    // if (newCards.length === 0 && pendingCards.length === 0) {
+    //   this.logger.debug('No hay cartas para procesar. Saliendo...');
+    //   return;
+    // }
 
     // Agrupar cartas por subárea para optimizar notificaciones
     const cartasPorSubArea = new Map<bigint, { new: any[]; pending: any[] }>();
 
-    // Procesar cartas nuevas
     for (const carta of newCards) {
       if (!cartasPorSubArea.has(carta.subAreaId)) {
         cartasPorSubArea.set(carta.subAreaId, { new: [], pending: [] });
@@ -78,15 +72,13 @@ export class CardsService {
       cartasPorSubArea.get(carta.subAreaId).new.push(carta);
     }
 
-    // Procesar cartas pendientes
-    for (const carta of pendingCards) {
-      if (!cartasPorSubArea.has(carta.subAreaId)) {
-        cartasPorSubArea.set(carta.subAreaId, { new: [], pending: [] });
-      }
-      cartasPorSubArea.get(carta.subAreaId).pending.push(carta);
-    }
+    // for (const carta of pendingCards) {
+    //   if (!cartasPorSubArea.has(carta.subAreaId)) {
+    //     cartasPorSubArea.set(carta.subAreaId, { new: [], pending: [] });
+    //   }
+    //   cartasPorSubArea.get(carta.subAreaId).pending.push(carta);
+    // }
 
-    // Procesar cada subárea
     for (const [subAreaId, cartas] of cartasPorSubArea.entries()) {
       await this.processSubArea(subAreaId, cartas.new, cartas.pending);
     }
@@ -97,7 +89,6 @@ export class CardsService {
     newCards: any[],
     pendingCards: any[],
   ) {
-    // Buscar usuarios de la subárea
     const usuarios = await this.prisma.usuario.findMany({
       where: { subAreaId },
     });
@@ -107,19 +98,17 @@ export class CardsService {
       return;
     }
 
-    // Combinar todas las cartas
     const allCards = [...newCards, ...pendingCards];
 
-    // Si no hay cartas, no hacer nada
     if (allCards.length === 0) {
       return;
     }
+
     this.logger.log(`Cantidad de cartas a enviar ${allCards.length}`);
-    // 1. Agrupar cartas por su lista de CC (creamos un hash único para cada combinación de CC)
+
     const gruposCC = new Map<string, any[]>();
 
     for (const carta of allCards) {
-      // Normalizar los CC: ordenar alfabéticamente y eliminar duplicados
       const ccNormalizados = Array.from(new Set(carta.correosCopia || []))
         .sort()
         .join(';');
@@ -127,35 +116,38 @@ export class CardsService {
       if (!gruposCC.has(ccNormalizados)) {
         gruposCC.set(ccNormalizados, []);
       }
+
       gruposCC.get(ccNormalizados).push(carta);
     }
 
-    // 2. Procesar cada grupo de CC
-    for (const usuario of usuarios) {
-      for (const [ccKey, cartas] of gruposCC.entries()) {
-        const ccList = ccKey.split(';').filter(Boolean); // Convertir de vuelta a array
+    await Promise.all(
+      usuarios.map((usuario) =>
+        Promise.all(
+          Array.from(gruposCC.entries()).map(async ([ccKey, cartas]) => {
+            const ccList = ccKey.split(';').filter(Boolean);
 
-        const email = {
-          email: usuario.email,
-          nombre: usuario.nombre,
-          cc: ccList, // Usar solo los CC correspondientes a este grupo
-        };
+            const email = {
+              email: usuario.email,
+              nombre: usuario.nombre,
+              cc: ccList,
+            };
 
-        try {
-          await this.mail.sendNotification(email, cartas);
-          this.logger.log(
-            `Correo enviado a ${usuario.email} con ${cartas.length} cartas ` +
-              `(CC: ${ccList.length > 0 ? ccList.join(', ') : 'ninguno'})`,
-          );
-        } catch (error) {
-          this.logger.error(
-            `Error al enviar correo a ${usuario.email}: ${error.message}`,
-          );
-        }
-      }
-    }
+            try {
+              await this.mail.sendNotification(email, cartas);
+              this.logger.log(
+                `Correo enviado a ${usuario.email} con ${cartas.length} cartas ` +
+                  `(CC: ${ccList.length > 0 ? ccList.join(', ') : 'ninguno'})`,
+              );
+            } catch (error) {
+              this.logger.error(
+                `Error al enviar correo a ${usuario.email}: ${error.message}`,
+              );
+            }
+          }),
+        ),
+      ),
+    );
 
-    // 3. Actualizar cartas nuevas (marcar como enviadas)
     if (newCards.length > 0) {
       await this.prisma.carta.updateMany({
         where: {
@@ -163,16 +155,15 @@ export class CardsService {
         },
         data: {
           fechaEnvio: new Date(),
-          estado: 'PendienteArea',
+          estado: 'Pendiente',
         },
       });
+
       this.logger.log(
         `${newCards.length} cartas nuevas marcadas como enviadas`,
       );
     }
   }
-
-  //Create a card
   async create(createCardDto: CreateCardDto) {
     const { referencia, archivosAdjuntos, ...rest } = createCardDto;
 
@@ -193,58 +184,44 @@ export class CardsService {
       },
     });
   }
-  //Get all Card with Paginations and Filters
+
+  async findAllReport() {
+    let where: Prisma.CartaWhereInput = {};
+    const data = await this.prisma.carta.findMany({
+      where,
+      orderBy: { id: 'desc' },
+      include: {
+        Destinatario: true,
+        cartaAnterior: true,
+        respuestas: true,
+        areaResponsable: true,
+        subArea: true,
+        temaRelacion: true,
+        empresa: true,
+      },
+    });
+    const datesFormated = data.map((carta) => ({
+      ...carta,
+      fechaIngreso: carta.fechaIngreso?.toISOString().split('T')[0],
+      fechaEnvio: carta.fechaEnvio?.toISOString().split('T')[0],
+      fechadevencimiento: carta.fechadevencimiento?.toISOString().split('T')[0],
+    }));
+
+    return { data: datesFormated, meta: { total: data.length } };
+  }
   async findAll(paginationDto: PaginationDto) {
     const { page, limit, search, searchBy, filters } = paginationDto;
 
-    console.log('que recibimos', paginationDto);
     let where = {};
 
-    // if (search && searchBy) {
-    //   where = {
-    //     OR: searchBy.map((column) => ({
-    //       [column]: {
-    //         contains: search,
-    //         mode: 'insensitive',
-    //       },
-    //     })),
-    //   };
-    // }
-    // Filtros adicionales (filters)
-    // if (filters) {
-    //   const filterConditions = Object.keys(filters)
-    //     .filter(
-    //       (key) =>
-    //         filters[key] !== '' &&
-    //         filters[key] !== null &&
-    //         filters[key] !== undefined,
-    //     ) // Ignorar filtros vacíos
-    //     .map((key) => {
-    //       // Convertir fechaIngreso a un objeto Date si es necesario
-    //       if (key === 'fechaIngreso' && filters[key]) {
-    //         return {
-    //           [key]: new Date(filters[key]), // Convertir a DateTime
-    //         };
-    //       }
-    //       return {
-    //         [key]: filters[key],
-    //       };
-    //     });
-    //
-    //   // Solo agregar AND si hay condiciones de filtro válidas
-    //   if (filterConditions.length > 0) {
-    //     where = {
-    //       ...where,
-    //       AND: filterConditions,
-    //     };
-    //   }
-    // }
-    // console.log('where>>', where);
-
-    // const total = await this.prisma.carta.count({ where });
-
     const data = await this.prisma.carta.findMany({
-      where,
+      where: {
+        estado: {
+          not: {
+            in: ['Cerrado', 'Respondido'],
+          },
+        },
+      },
       // skip: (page - 1) * Number(limit),
       // take: Number(limit),
       orderBy: { id: 'desc' },
@@ -308,6 +285,51 @@ export class CardsService {
   async update(id: number, updateCardDto: UpdateCardDto) {
     const { archivosAdjuntos, ...rest } = updateCardDto;
 
+    const carta = await this.prisma.carta.findUnique({
+      where: { id },
+      include: {
+        subArea: {
+          include: {
+            usuarios: true,
+          },
+        },
+        areaResponsable: true,
+        cartaAnterior: true,
+        temaRelacion: true,
+        empresa: true,
+        respuestas: true,
+      },
+    });
+
+    if (!carta) {
+      throw new Error(`Carta con ID ${id} no encontrada`);
+    }
+
+    await Promise.all(
+      carta.subArea.usuarios.map(async (usuario) => {
+        const email = {
+          email: usuario.email,
+          nombre: usuario.nombre,
+          cc: carta.correosCopia || [],
+          priority: carta.nivelImpacto,
+          asunto: carta.asunto,
+          fechaIngreso: carta.fechaIngreso.toISOString().split('T')[0],
+          resumenRecibido: carta.resumenRecibido,
+          urgente: carta.urgente,
+        };
+        try {
+          await this.mail.sendUrgentNotificaciont(email);
+          this.logger.log(
+            `Correo enviado a ${usuario.email} sobre la carta Urgente`,
+          );
+        } catch (error) {
+          this.logger.error(
+            `Error al enviar correo a ${usuario.email}: ${error.message}`,
+          );
+        }
+      }),
+    );
+
     return this.prisma.carta.update({
       where: { id },
       data: {
@@ -315,10 +337,11 @@ export class CardsService {
         ...(archivosAdjuntos && archivosAdjuntos.length > 0
           ? { archivosAdjuntos }
           : {}),
+        observaciones: null,
+        estado: 'Ingresado',
       },
     });
   }
-  //Delete One Card
   remove(id: number) {
     return this.prisma.carta.delete({
       where: { id },
@@ -365,7 +388,6 @@ export class CardsService {
     }
   }
 
-  //Get One Card for Trazability
   async reportsCards(id: bigint) {
     const getTrazabilidad = async (cartaId: bigint): Promise<any> => {
       const carta = await this.prisma.carta.findUnique({
@@ -374,10 +396,9 @@ export class CardsService {
       });
 
       if (!carta) {
-        return null; // Si no existe la carta, retornar null
+        return null;
       }
 
-      // Si existe una carta anterior, obtener su trazabilidad recursivamente
       if (carta.cartaAnterior) {
         carta.cartaAnterior = await getTrazabilidad(carta.cartaAnterior.id);
       }
@@ -385,10 +406,8 @@ export class CardsService {
       return carta;
     };
 
-    // Obtener la trazabilidad de la carta solicitada
     const trazabilidad = await getTrazabilidad(id);
 
-    // Formatear las fechas
     const formatDates = (carta) => {
       return {
         ...carta,
@@ -404,7 +423,7 @@ export class CardsService {
     };
     return formatDates(trazabilidad);
   }
-  //Create card for Assing Form
+
   async createReceivedCard(receivedCardDto: ReceivedCardDto) {
     const {
       referencia,
@@ -452,30 +471,33 @@ export class CardsService {
         throw new NotFoundException('La subárea no existe');
       }
 
-      for (const usuario of subArea.usuarios) {
-        let email = {
-          email: usuario.email,
-          nombre: usuario.nombre,
-          cc: correosCopia || [],
-          priority: nivelImpacto,
-          asunto: receivedCardDto.asunto,
-          fechaIngreso: receivedCardDto.fechaIngreso
-            .toISOString()
-            .split('T')[0],
-          resumenRecibido: receivedCardDto.resumenRecibido,
-          urgente: urgente,
-        };
-        try {
-          await this.mail.sendUrgentNotificaciont(email); // No usamos await para no bloquear el flujo
-          this.logger.log(
-            `Correo enviado a ${usuario.email} sobre la carta Urgente`,
-          );
-        } catch (error) {
-          this.logger.error(
-            `Error al enviar correo a ${usuario.email}: ${error.message}`,
-          );
-        }
-      }
+      await Promise.all(
+        subArea.usuarios.map(async (usuario) => {
+          const email = {
+            email: usuario.email,
+            nombre: usuario.nombre,
+            cc: correosCopia || [],
+            priority: nivelImpacto,
+            asunto: receivedCardDto.asunto,
+            fechaIngreso: receivedCardDto.fechaIngreso
+              .toISOString()
+              .split('T')[0],
+            resumenRecibido: receivedCardDto.resumenRecibido,
+            urgente: urgente,
+          };
+
+          try {
+            await this.mail.sendUrgentNotificaciont(email);
+            this.logger.log(
+              `Correo enviado a ${usuario.email} sobre la carta Urgente`,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Error al enviar correo a ${usuario.email}: ${error.message}`,
+            );
+          }
+        }),
+      );
     }
 
     if (referencia) {
@@ -509,11 +531,38 @@ export class CardsService {
     });
   }
 
+  async closeCard(id: number) {
+    let estado = 'Cerrado';
+
+    return this.prisma.carta.update({
+      where: { id },
+      data: {
+        estado,
+      },
+    });
+  }
+
+  async reopenCard(id: number, body: any) {
+    let estado = 'Ingresado';
+
+    return this.prisma.carta.update({
+      where: { id },
+      data: {
+        estado,
+        motivoReapertura: body.motivo,
+      },
+    });
+  }
   //AnswerPendingCard, Answer a Card of Pendings
   async pendingCard(id: number, pendingCardDto: PendingCardDto) {
     const { devuelto, ...rest } = pendingCardDto;
 
-    let estado = 'Pendiente';
+    let estado;
+    if (devuelto) {
+      estado = 'Pendiente';
+    } else {
+      estado = 'Respondido';
+    }
 
     return this.prisma.carta.update({
       where: { id },
@@ -521,6 +570,7 @@ export class CardsService {
         ...rest,
         estado,
         devuelto,
+        motivoReapertura: null,
       },
     });
   }
@@ -549,84 +599,28 @@ export class CardsService {
   //Get all Pendings Cards
   async findAllPendientes(subAreaId: number, paginationDto: PaginationDto) {
     const { page, limit, search, searchBy, filters } = paginationDto;
-    console.log('subarea', subAreaId);
 
-    // Definir el where inicial con el filtro de subAreaId y estado 'Pendiente'
-    // Definir el where inicial
     let where: any = {};
 
     if (subAreaId === 0) {
       where = {
-        AND: [
-          { estado: { not: 'PendienteArea' } },
-          { estado: { not: 'Cerrado' } },
-          { estado: { not: 'Ingresado' } },
-        ],
+        estado: {
+          in: ['Ingresado', 'Respondido'],
+        },
       };
     } else {
       where = {
         subAreaId: subAreaId,
         AND: [
-          { estado: { not: 'Pendiente' } },
-          { estado: { not: 'Cerrado' } },
-          { estado: { not: 'Ingresado' } },
           {
-            AND: [{ comentario: null }, { cartaborrador: null }],
+            estado: 'Ingresado',
           },
         ],
       };
     }
-    // Búsqueda (search)
-    if (search && searchBy) {
-      where = {
-        ...where,
-        OR: searchBy.map((column) => ({
-          [column]: {
-            contains: search,
-            mode: 'insensitive', // Búsqueda insensible a mayúsculas/minúsculas
-          },
-        })),
-      };
-    }
 
-    // Filtros adicionales (filters)
-    if (filters) {
-      const filterConditions = Object.keys(filters)
-        .filter(
-          (key) =>
-            filters[key] !== '' &&
-            filters[key] !== null &&
-            filters[key] !== undefined,
-        ) // Ignorar filtros vacíos
-        .map((key) => {
-          // Convertir fechas a objetos Date si es necesario
-          if (
-            (key === 'fechaIngreso' || key === 'fechadevencimiento') &&
-            filters[key]
-          ) {
-            return {
-              [key]: new Date(filters[key]), // Convertir a DateTime
-            };
-          }
-          return {
-            [key]: filters[key],
-          };
-        });
-
-      // Solo agregar AND si hay condiciones de filtro válidas
-      if (filterConditions.length > 0) {
-        where = {
-          ...where,
-          AND: filterConditions,
-        };
-      }
-    }
-    console.log('where final', where);
-
-    // Obtener el total de cartas pendientes para la subárea con los filtros aplicados
     const total = await this.prisma.carta.count({ where });
 
-    // Obtener las cartas paginadas
     const cartas = await this.prisma.carta.findMany({
       where,
       skip: (page - 1) * Number(limit),
@@ -637,10 +631,10 @@ export class CardsService {
         subArea: true,
         temaRelacion: true,
         empresa: true,
+        Destinatario: true,
       },
     });
 
-    // Formatear las fechas
     const datesFormated = cartas.map((carta) => ({
       ...carta,
       fechaIngreso: carta.fechaIngreso?.toISOString().split('T')[0],
@@ -648,7 +642,6 @@ export class CardsService {
       fechadevencimiento: carta.fechadevencimiento?.toISOString().split('T')[0],
     }));
 
-    // Retornar los datos paginados y la metadata
     return {
       data: datesFormated,
       meta: {
@@ -678,7 +671,7 @@ export class CardsService {
         ? this.prisma.carta.count({
             where: {
               subAreaId,
-              estado: 'PendienteArea',
+              estado: 'Pendiente',
             },
           })
         : Promise.resolve(0),
@@ -697,8 +690,8 @@ export class CardsService {
 
       urgentes: this.prisma.carta.count({
         where: isAdmin
-          ? { estado: 'PendienteArea', urgente: true }
-          : { subAreaId, estado: 'PendienteArea', urgente: true },
+          ? { estado: 'Pendiente', urgente: true }
+          : { subAreaId, estado: 'Pendiente', urgente: true },
       }),
 
       vencidas: this.prisma.carta.count({
@@ -725,7 +718,7 @@ export class CardsService {
     const adminQueries = isAdmin
       ? {
           pendientesGlobal: this.prisma.carta.count({
-            where: { estado: { in: ['Pendiente', 'PendienteArea'] } },
+            where: { estado: { in: ['Pendiente'] } },
           }),
 
           respondidasFueraPlazo: this.prisma.$queryRaw<{ count: bigint }[]>`

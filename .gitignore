@@ -55,7 +55,6 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
-<<<<<<< HEAD
+
 web.config
-=======
->>>>>>> b01e7b4a89c49f30f1e749027179ce45154ffbb1
+package-lock.json

@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AreaResponsable {
+  id          BigInt    @id @default(autoincrement())
+  nombre      String
+  procedencia String?
+  creadoPorId BigInt?
+  subAreas    SubArea[]
+  cartas      Carta[]
+  usuarios    Usuario[]
+}
+
+model SubArea {
+  id                BigInt          @id @default(autoincrement())
+  nombre            String
+  areaResponsable   AreaResponsable @relation(fields: [areaResponsableId], references: [id])
+  areaResponsableId BigInt
+  procedencia       String?
+  jefatura          String?
+  creadoPorId       BigInt?
+  cartas            Carta[]
+  usuarios          Usuario[]
+}
+
+model Empresa {
+  id          BigInt  @id @default(autoincrement())
+  nombre      String
+  creadoPorId BigInt?
+  cartas      Carta[]
+}
+
+model Rol {
+  id          BigInt    @id @default(autoincrement())
+  nombre      String
+  creadoPorId BigInt?
+  usuarios    Usuario[]
+}
+
+model Usuario {
+  id          BigInt           @id @default(autoincrement())
+  nombre      String
+  email       String           @unique
+  apellidos   String?
+  contraseña String
+  area        AreaResponsable? @relation(fields: [areaId], references: [id])
+  areaId      BigInt?
+  subArea     SubArea?         @relation(fields: [subAreaId], references: [id])
+  subAreaId   BigInt?
+  rol         Rol              @relation(fields: [rolId], references: [id])
+  rolId       BigInt
+  procedencia String?
+  tipoUsuario String?
+  jefe        String
+  creadoPorId BigInt?
+  cartas      Carta[]
+}
+
+model CartaAdjunto {
+  id       BigInt @id @default(autoincrement())
+  cartaId  BigInt
+  filepath String
+  nombre   String
+  Carta    Carta  @relation(fields: [cartaId], references: [id])
+}
+
+model Carta {
+  id                BigInt           @id @default(autoincrement())
+  pdfInfo           String
+  codigoRecibido    String
+  fechaIngreso      DateTime         @default(now())
+  destinatario      BigInt
+  esConfidencial    Boolean
+  asunto            String
+  devuelto          Boolean          @default(false)
+  estado            String           @default("Ingresado")
+  archivosAdjuntos  String[]
+  //referencia        String?
+  resumenRecibido   String?
+  tema              String?
+  nivelImpacto      String?
+  correosCopia      String[]         @default([])
+  areaResponsable   AreaResponsable? @relation(fields: [areaResponsableId], references: [id])
+  areaResponsableId BigInt?
+  subArea           SubArea?         @relation(fields: [subAreaId], references: [id])
+  subAreaId         BigInt?
+  empresa           Empresa?         @relation(fields: [empresaId], references: [id])
+  empresaId         BigInt?
+  temaId            BigInt?
+  temaRelacion      Tema?            @relation(fields: [temaId], references: [id])
+  usuarios          Usuario[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  vencimiento        Boolean   @default(false) // Indica si la carta tiene vencimiento
+  fechadevencimiento DateTime? // Fecha de vencimiento (opcional)
+  informativo        Boolean   @default(false) // Indica si la carta es informativa
+  urgente            Boolean   @default(false) // Indica si la carta es urgente
+  cartaborrador      String? // Borrador de la respuesta (opcional)
+  comentario         String? // Comentario adicional (opcional)
+  observaciones      String? // Observaciones si la carta se devuelve (opcional)
+
+  codigoenviado   String?
+  fechaEnvio      DateTime?
+  asuntoEnviado   String?
+  resumenEnviado  String?
+  cartaEnviada    String?
+  comentarioCargo String?
+
+  motivoReapertura String?
+  Destinatario     Destinatario @relation(fields: [destinatario], references: [id])
+
+  //Usado en función de si la carta fue emitida o fue una carta que llegó
+  emision Boolean @default(false)
+
+  //Si es falso es partida, si es verdadero es carta, relevante para el llenado unicamente
+  partida Boolean @default(false)
+
+  //Campos para más archivos
+  pdfInfo2       String?
+  pdfInfoArreglo String[] @default([])
+  // Relacion referencial con una carta anterior
+  referencia     BigInt? // Campo opcional para el ID de la carta anterior
+  cartaAnterior  Carta?   @relation("CartaRespuesta", fields: [referencia], references: [id]) // Relación con la carta anterior
+  respuestas     Carta[]  @relation("CartaRespuesta") // Relación inversa para las cartas que responden a esta
+
+  // Recibido o Enviado
+  tipo String @default("Recibido")
+
+  active       Boolean        @default(true)
+  CartaAdjunto CartaAdjunto[]
+}
+
+model Tema {
+  id          BigInt  @id @default(autoincrement())
+  nombre      String
+  creadoPorId BigInt?
+  cartas      Carta[]
+}
+
+model Destinatario {
+  id      BigInt  @id @default(autoincrement())
+  tipodoc String
+  numdoc  String
+  nombre  String
+  Carta   Carta[]
+}

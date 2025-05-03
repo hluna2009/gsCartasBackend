@@ -1,0 +1,142 @@
+<body style='margin: 0; padding: 0; background-color: #f3f4f6;'>
+  <table
+    role='presentation'
+    cellspacing='0'
+    cellpadding='0'
+    border='0'
+    width='100%'
+    style='background-color: #f3f4f6; padding: 40px 0;'
+  >
+    <tr>
+      <td align='center'>
+        <table
+          role='presentation'
+          cellpadding='0'
+          cellspacing='0'
+          width='100%'
+          style='
+              max-width: 600px;
+              background-color: #ffffff;
+              border-radius: 8px;
+              padding: 32px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              font-family: Arial, sans-serif;
+            '
+        >
+          <tr>
+            <td align='center' style='padding-bottom: 20px;'>
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                fill='currentColor'
+                viewBox='0 0 24 24'
+                width='64'
+                height='64'
+                style='color: #3b82f6;'
+              >
+                <path
+                  d='M2 4a2 2 0 012-2h16a2 2 0 012 2v2l-10 6L2 6V4zm0 4.236l8.765 5.259a1 1 0 001.47 0L22 8.236V18a2 2 0 01-2 2H4a2 2 0 01-2-2V8.236z'
+                />
+              </svg>
+            </td>
+          </tr>
+
+          <tr>
+            <td align='center' style='padding-bottom: 12px;'>
+              <h1
+                style='font-size: 24px; color: #1f2937; margin: 0; font-weight: bold;'
+              >
+                Grupo Sur – Nueva Carta Recibida
+              </h1>
+            </td>
+          </tr>
+
+          <tr>
+            <td align='center' style='padding-bottom: 16px;'>
+              <p style='font-size: 16px; color: #4b5563; margin: 0;'>
+                {{message}}
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style='padding-bottom: 24px;'>
+              <table
+                width='100%'
+                style='font-size: 14px; color: #374151; line-height: 1.6;'
+              >
+                <tr>
+                  <td><strong>Asunto:</strong></td>
+                  <td>{{asunto}}</td>
+                </tr>
+                <tr>
+                  <td><strong>Estado:</strong></td>
+                  <td>{{estado}}</td>
+                </tr>
+                <tr>
+                  <td><strong>Fecha de ingreso:</strong></td>
+                  <td>{{fechaIngreso}}</td>
+                </tr>
+                <tr>
+                  <td><strong>Resumen:</strong></td>
+                  <td>{{resumenRecibido}}</td>
+                </tr>
+                <tr>
+                  <td><strong>Urgente:</strong></td>
+                  <td>{{#if urgente}}Sí{{else}}No{{/if}}</td>
+                </tr>
+                {{#if pdfInfo}}
+                  <tr>
+                    <td><strong>PDF:</strong></td>
+                    <td><a href='{{pdfInfo}}' target='_blank'>Ver PDF</a></td>
+                  </tr>
+                {{/if}}
+                {{#if archivosAdjuntos.length}}
+                  <tr>
+                    <td valign='top'><strong>Adjuntos:</strong></td>
+                    <td>
+                      <ul style='padding-left: 16px; margin: 0;'>
+                        {{#each archivosAdjuntos}}
+                          <li><a href='{{this}}' target='_blank'>Archivo adjunto</a></li>
+                        {{/each}}
+                      </ul>
+                    </td>
+                  </tr>
+                {{/if}}
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td align='center'>
+              <a
+                href='{{link}}'
+                target='_blank'
+                style='
+                    background-color: #3b82f6;
+                    color: #ffffff;
+                    text-decoration: none;
+                    padding: 12px 24px;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    display: inline-block;
+                  '
+              >
+                Ver carta completa
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td align='center' style='padding-top: 32px;'>
+              <p style='font-size: 12px; color: #9ca3af;'>
+                ©
+                {{year}}
+                Grupo Sur. Todos los derechos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>

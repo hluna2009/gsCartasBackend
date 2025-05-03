@@ -2,47 +2,47 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login-user.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class AuthService {
-
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
 
-
-  async login(loginuserDto: LoginUserDto){
+  async login(loginuserDto: LoginUserDto) {
     const user = await this.prisma.usuario.findUnique({
       where: {
-        email: loginuserDto.email
-      }
+        email: loginuserDto.email,
+      },
     });
 
-    console.log("que fue del user", user);
-    
+    console.log('que fue del user', user);
 
-    if(!user || !(await bcrypt.compare(loginuserDto.contraseña, user.contraseña))){
+    if (
+      !user ||
+      !(await bcrypt.compare(loginuserDto.contraseña, user.contraseña))
+    ) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
     const payload = { email: user.email, sub: user.id.toString() };
 
-    console.log("payload", payload);
-    
+    console.log('payload', payload);
+
     const access_token = this.jwtService.sign(payload);
-    
+
     return {
       access_token,
-      userId: user.id
-    }
+      userId: user.id,
+    };
   }
 
-  async getProfile(userId: number){
+  async getProfile(userId: number) {
     return this.prisma.usuario.findUnique({
       where: {
-        id: userId
+        id: userId,
       },
       select: {
         id: true,
@@ -51,10 +51,10 @@ export class AuthService {
         subAreaId: true,
         rol: {
           select: {
-            nombre: true
-          }
-        }
-      }
+            nombre: true,
+          },
+        },
+      },
     });
   }
 

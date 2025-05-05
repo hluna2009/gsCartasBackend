@@ -5,18 +5,19 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FileuploadService {
-  private readonly logger = new Logger(FileuploadService.name)
+  private readonly logger = new Logger(FileuploadService.name);
   private readonly uploadPath: string;
 
-  constructor(
-    private readonly configService: ConfigService
-  ){
+  constructor(private readonly configService: ConfigService) {
     const isProduction = this.configService.get('NODE_ENV') === 'prod';
-    this.uploadPath = isProduction 
-      ? join(__dirname, '../files/')  // En producción, desde dist/files/
+
+    this.uploadPath = isProduction
+      ? join(__dirname, '../files/')
       : join(__dirname, '../../files/'); // En desarrollo, desde src/files/
 
-    this.logger.log(`File upload path configured for ${isProduction ? 'production' : 'development'}: ${this.uploadPath}`);
+    this.logger.log(
+      `File upload path configured for ${isProduction ? 'production' : 'development'}: ${this.uploadPath}`,
+    );
   }
 
   getStaticProductImage(imageName: string) {
@@ -29,5 +30,4 @@ export class FileuploadService {
 
     return path;
   }
-
 }

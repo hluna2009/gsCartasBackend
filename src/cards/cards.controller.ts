@@ -71,9 +71,13 @@ export class CardsController {
     description: 'Cantidades obtenidas correctamente',
   })
   @ApiResponse({ status: 404, description: 'No se encontraron cantidades' })
-  findStats(@Param('userId') userId: string) {
+  findStats(
+    @Param('userId') userId: string,
+    @Query('subAreaId') subAreaId?: string,
+  ) {
     const idBigInt = BigInt(userId);
-    return this.cardsService.findStats(idBigInt);
+    const subAreaIdParsed = subAreaId ? Number(subAreaId) : undefined;
+    return this.cardsService.findStats(idBigInt, subAreaIdParsed);
   }
 
   @Get('pending/:subareaId')

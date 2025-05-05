@@ -652,8 +652,7 @@ export class CardsService {
       },
     };
   }
-
-  async findStats(userId: bigint) {
+  async findStats(userId: bigint, subAreaIParam: number | undefined) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       include: { rol: true, subArea: true },
@@ -664,126 +663,133 @@ export class CardsService {
     const isAdmin = usuario.rol.nombre === 'admin';
     const subAreaId = usuario.subAreaId;
     const now = new Date();
+    const filterAdmin = subAreaIParam ? { subAreaId: subAreaIParam } : {};
+    const whereBase = isAdmin ? { ...filterAdmin } : { subAreaId };
 
-    // Consultas base para todos los usuarios
-    const baseQueries = {
-      enPosesion: !isAdmin
-        ? this.prisma.carta.count({
-            where: {
-              subAreaId,
-              estado: 'Pendiente',
-            },
-          })
-        : Promise.resolve(0),
-
-      respondidas: this.prisma.carta.count({
-        where: isAdmin
-          ? { estado: 'Cerrado' }
-          : { subAreaId, estado: 'Cerrado' },
+    const [
+      groupByEstado,
+      total,
+      porResponder,
+      urgentesPorResponder,
+      vencidasPorResponder,
+      informativasPorResponder,
+      totalEmisionActivo,
+      totalEmisionDesactivo,
+      totalPartidaActivo,
+      totalPartidaDesactivo,
+      totalNivelImpactoAlto,
+      totalNivelImpactoBajo,
+      totalCartasUrgentes,
+      totalCartasNoUrgentes,
+      totalInformativas,
+      totalNoInformativas,
+    ] = await Promise.all([
+      this.prisma.carta.groupBy({
+        by: ['subAreaId', 'estado'],
+        _count: {
+          _all: true,
+        },
+        where: whereBase,
       }),
 
-      informativas: this.prisma.carta.count({
-        where: isAdmin
-          ? { informativo: true }
-          : { subAreaId, informativo: true },
+      this.prisma.carta.count({ where: whereBase }),
+      this.prisma.carta.count({
+        where: {
+          ...whereBase,
+          estado: { not: 'Cerrado' },
+        },
       }),
-
-      urgentes: this.prisma.carta.count({
-        where: isAdmin
-          ? { estado: 'Pendiente', urgente: true }
-          : { subAreaId, estado: 'Pendiente', urgente: true },
+      this.prisma.carta.count({
+        where: {
+          ...whereBase,
+          estado: 'Pendiente',
+          urgente: true,
+        },
       }),
-
-      vencidas: this.prisma.carta.count({
-        where: isAdmin
-          ? {
-              vencimiento: true,
-              fechadevencimiento: { lt: now },
-              estado: { not: 'Cerrado' },
-            }
-          : {
-              subAreaId,
-              vencimiento: true,
-              fechadevencimiento: { lt: now },
-              estado: { not: 'Cerrado' },
-            },
+      this.prisma.carta.count({
+        where: {
+          ...whereBase,
+          vencimiento: true,
+          fechadevencimiento: { lt: now },
+          estado: { not: 'Cerrado' },
+        },
       }),
-
-      total: isAdmin
-        ? this.prisma.carta.count()
-        : this.prisma.carta.count({ where: { subAreaId } }),
-    };
-
-    // Consultas específicas para admin (KPIs)
-    const adminQueries = isAdmin
-      ? {
-          pendientesGlobal: this.prisma.carta.count({
-            where: { estado: { in: ['Pendiente'] } },
-          }),
-
-          respondidasFueraPlazo: this.prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(*)::bigint 
-      FROM "Carta"
-      WHERE estado = 'Cerrado'
-      AND "fechaEnvio" IS NOT NULL
-      AND "fechadevencimiento" IS NOT NULL
-      AND "fechadevencimiento" < "fechaEnvio"
-    `,
-
-          // Tiempo promedio de respuesta en días (solo cartas cerradas)
-          tiempoPromedio: this.prisma.$queryRaw<{ avg_days: number }[]>`
-        SELECT AVG(
-          EXTRACT(EPOCH FROM ("fechaEnvio" - "fechaIngreso"))/86400
-        )::integer as avg_days
-        FROM "Carta"
-        WHERE estado = 'Cerrado'
-        AND "fechaEnvio" IS NOT NULL
-        AND "fechaIngreso" IS NOT NULL
-      `,
-        }
-      : null;
-
-    // Ejecutar consultas en paralelo
-    const [baseResults, adminResults] = await Promise.all([
-      Promise.all(Object.values(baseQueries)),
-      isAdmin ? Promise.all(Object.values(adminQueries!)) : Promise.resolve([]),
+      this.prisma.carta.count({
+        where: {
+          ...whereBase,
+          informativo: true,
+        },
+      }),
+      this.prisma.carta.count({ where: { emision: true } }),
+      this.prisma.carta.count({ where: { emision: false } }),
+      this.prisma.carta.count({ where: { vencimiento: true } }),
+      this.prisma.carta.count({ where: { vencimiento: false } }),
+      this.prisma.carta.count({ where: { nivelImpacto: 'ALTO' } }),
+      this.prisma.carta.count({ where: { nivelImpacto: 'BAJO' } }),
+      this.prisma.carta.count({ where: { urgente: true } }),
+      this.prisma.carta.count({ where: { urgente: false } }),
+      this.prisma.carta.count({ where: { informativo: true } }),
+      this.prisma.carta.count({ where: { informativo: false } }),
     ]);
-    // Formatear resultados
-    const stats: any = {
-      cartasEnPosesion: !isAdmin ? baseResults[0] : undefined,
-      cartasRespondidas: baseResults[1],
-      cartasInformativas: baseResults[2],
-      cartasUrgentes: baseResults[3],
-      cartasVencidas: baseResults[4],
-      total: baseResults[5],
-      porcentajeRespuesta: Math.round(
-        (baseResults[1] / (baseResults[5] || 1)) * 100,
+
+    const agrupadoPorEstado = Object.values(
+      groupByEstado.reduce(
+        (acc, item) => {
+          const id = Number(item.subAreaId);
+          const estado = item.estado;
+          const count = item._count._all;
+
+          if (!acc[id]) {
+            acc[id] = {
+              subArea: id,
+              estados: {
+                Ingresado: 0,
+                Respondido: 0,
+                Pendiente: 0,
+                Cerrado: 0,
+              },
+            };
+          }
+
+          // Asegúrate de que el estado exista en la subArea y asigna el valor
+          acc[id].estados[estado] = count;
+
+          return acc;
+        },
+        {} as Record<
+          number,
+          { subArea: number; estados: Record<string, number> }
+        >,
+      ),
+    );
+    return {
+      total,
+      porResponder,
+      urgentesPorResponder,
+      vencidasPorResponder,
+      informativasPorResponder,
+      totalEmisionActivo,
+      totalEmisionDesactivo,
+      totalPartidaActivo,
+      totalPartidaDesactivo,
+      totalNivelImpactoAlto,
+      totalNivelImpactoBajo,
+      totalCartasUrgentes,
+      totalCartasNoUrgentes,
+      totalInformativas,
+      totalNoInformativas,
+      agrupadoPorEstado: await Promise.all(
+        agrupadoPorEstado.map(async (item) => {
+          const subArea = await this.prisma.subArea.findUnique({
+            where: { id: item.subArea },
+          });
+
+          return {
+            ...item,
+            subArea: subArea?.nombre ?? 'Desconocida',
+          };
+        }),
       ),
     };
-
-    // Agregar KPIs para admin
-    if (isAdmin && adminResults.length > 0) {
-      const fueraPlazoCount = adminResults[1]?.[0]?.count || 0;
-
-      stats.kpis = {
-        pendientesGlobales: adminResults[0],
-        tasaRespuesta:
-          baseResults[5] > 0
-            ? Number((baseResults[1] / baseResults[5]).toFixed(2))
-            : 0,
-        eficienciaPlazos:
-          baseResults[1] > 0
-            ? Number(
-                ((baseResults[1] - adminResults[1]) / baseResults[1]).toFixed(
-                  2,
-                ),
-              )
-            : 0,
-        tiempoPromedioDias: adminResults[2]?.[0]?.avg_days || 0,
-        respondidasFueraPlazo: Number(fueraPlazoCount),
-      };
-    }
-
-    return stats;
   }
 }

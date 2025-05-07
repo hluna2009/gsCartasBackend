@@ -11,8 +11,6 @@ export class MailService {
   constructor(private mailerService: MailerService) {}
 
   async sendUserConfirmation(user: SendMailDto) {
-    console.log('data serivces', user);
-
     const url = `https://www.youtube.com/channel/UCvXekawNgmVfd615D52nNow`;
     await this.mailerService.sendMail({
       to: user.email,

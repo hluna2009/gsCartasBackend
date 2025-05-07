@@ -45,24 +45,6 @@ export class CardsService {
       include: { subArea: true },
     });
 
-    this.logger.log(`Cartas nuevas encontradas: ${newCards.length}`);
-
-    // const pendingCards = await this.prisma.carta.findMany({
-    //   where: {
-    //     estado: 'Pendiente',
-    //     informativo: false,
-    //   },
-    //   include: { subArea: true },
-    // });
-    //
-
-    // Si no hay cartas nuevas ni pendientes, no hacer nada
-    // if (newCards.length === 0 && pendingCards.length === 0) {
-    //   this.logger.debug('No hay cartas para procesar. Saliendo...');
-    //   return;
-    // }
-
-    // Agrupar cartas por subárea para optimizar notificaciones
     const cartasPorSubArea = new Map<bigint, { new: any[]; pending: any[] }>();
 
     for (const carta of newCards) {
@@ -71,13 +53,6 @@ export class CardsService {
       }
       cartasPorSubArea.get(carta.subAreaId).new.push(carta);
     }
-
-    // for (const carta of pendingCards) {
-    //   if (!cartasPorSubArea.has(carta.subAreaId)) {
-    //     cartasPorSubArea.set(carta.subAreaId, { new: [], pending: [] });
-    //   }
-    //   cartasPorSubArea.get(carta.subAreaId).pending.push(carta);
-    // }
 
     for (const [subAreaId, cartas] of cartasPorSubArea.entries()) {
       await this.processSubArea(subAreaId, cartas.new, cartas.pending);
@@ -103,8 +78,6 @@ export class CardsService {
     if (allCards.length === 0) {
       return;
     }
-
-    this.logger.log(`Cantidad de cartas a enviar ${allCards.length}`);
 
     const gruposCC = new Map<string, any[]>();
 
@@ -147,22 +120,6 @@ export class CardsService {
         ),
       ),
     );
-
-    if (newCards.length > 0) {
-      await this.prisma.carta.updateMany({
-        where: {
-          id: { in: newCards.map((c) => c.id) },
-        },
-        data: {
-          fechaEnvio: new Date(),
-          estado: 'Pendiente',
-        },
-      });
-
-      this.logger.log(
-        `${newCards.length} cartas nuevas marcadas como enviadas`,
-      );
-    }
   }
   async create(createCardDto: CreateCardDto) {
     const { referencia, archivosAdjuntos, ...rest } = createCardDto;

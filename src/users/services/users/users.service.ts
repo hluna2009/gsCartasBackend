@@ -58,7 +58,22 @@ export class UsersService {
       skip: (page - 1) * Number(limit),
       take: Number(limit),
       orderBy: { id: 'asc' },
-      include: { rol: true, area: true, subArea: true },
+      select: {
+        id: true,
+        nombre: true,
+        email: true,
+        apellidos: true,
+        tipoUsuario: true,
+        jefe: true,
+        areaId: true,
+        subAreaId: true,
+        rolId: true,
+        procedencia: true,
+        rol: true,
+        area: true,
+        subArea: true,
+      },
+      // include: { rol: true, area: true, subArea: true },
     });
 
     return {
@@ -78,10 +93,13 @@ export class UsersService {
     });
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async updateUser(id: number, updateUserDto: UpdateUserDto) {
     const { areaId, subAreaId, rolId, contraseña, ...rest } = updateUserDto;
 
-    const hashedPassword = await bcrypt.hash(contraseña, 10);
+    let hashedPassword;
+    if (contraseña) {
+      hashedPassword = await bcrypt.hash(contraseña, 10);
+    }
 
     try {
       return await this.prisma.usuario.update({
@@ -91,7 +109,7 @@ export class UsersService {
           area: areaId ? { connect: { id: areaId } } : undefined,
           subArea: subAreaId ? { connect: { id: subAreaId } } : undefined,
           rol: rolId ? { connect: { id: rolId } } : undefined,
-          contraseña: hashedPassword,
+          contraseña: contraseña ? hashedPassword : undefined,
         },
       });
     } catch (error) {

@@ -93,7 +93,7 @@ export class UsersService {
     });
   }
 
-  async updateUser(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
     const { areaId, subAreaId, rolId, contraseña, ...rest } = updateUserDto;
 
     let hashedPassword;

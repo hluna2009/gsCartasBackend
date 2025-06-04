@@ -273,9 +273,12 @@ export class CardsService {
           fechaIngreso: carta.fechaIngreso.toISOString().split('T')[0],
           resumenRecibido: carta.resumenRecibido,
           urgente: carta.urgente,
+          estado: carta.estado,
+          pdfInfo: carta.pdfInfo,
+          archivosAdjuntos: carta.archivosAdjuntos,
         };
         try {
-          await this.mail.sendUrgentNotificaciont(email);
+          this.mail.sendUrgentNotificaciont(email);
           this.logger.log(
             `Correo enviado a ${usuario.email} sobre la carta Urgente`,
           );
@@ -330,6 +333,9 @@ export class CardsService {
           fechaIngreso: carta.fechaIngreso.toString().split('T')[0],
           resumenRecibido: carta.resumenRecibido,
           urgente: carta.urgente,
+          estado: carta.estado,
+          pdfInfo: carta.pdfInfo,
+          archivosAdjuntos: carta.archivosAdjuntos,
         };
         try {
           this.mail.sendUrgentNotificaciont(email);
@@ -441,10 +447,13 @@ export class CardsService {
               .split('T')[0],
             resumenRecibido: receivedCardDto.resumenRecibido,
             urgente: urgente,
+            estado: 'Ingresado',
+            pdfInfo: receivedCardDto.pdfInfo,
+            archivosAdjuntos: receivedCardDto?.archivosAdjuntos,
           };
 
           try {
-            await this.mail.sendUrgentNotificaciont(email);
+            this.mail.sendUrgentNotificaciont(email);
             this.logger.log(
               `Correo enviado a ${usuario.email} sobre la carta Urgente`,
             );

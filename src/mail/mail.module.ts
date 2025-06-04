@@ -7,10 +7,10 @@ import { join } from 'path';
 import { MailController } from './mail.controller';
 
 @Module({
-  exports: [MailService] ,
+  exports: [MailService],
   imports: [
     MailerModule.forRootAsync({
-      useFactory: async (config:ConfigService) => ({
+      useFactory: async (config: ConfigService) => ({
         transport: {
           host: config.get('MAIL_HOST'),
           port: 587,
@@ -19,6 +19,10 @@ import { MailController } from './mail.controller';
             user: config.get('MAIL_USER'),
             pass: config.get('MAIL_PASSWORD'),
           },
+          pool: true, // 🔁 Reutiliza conexiones
+          maxConnections: 5, // 🔢 Máximo de conexiones simultáneas
+          maxMessages: 100, // 💌 Mensajes por conexión
+          rateLimit: 5,
           // tls: {
           //   ciphers: 'SSLv3'
           // }
@@ -33,7 +37,6 @@ import { MailController } from './mail.controller';
             strict: true,
           },
         },
-        
       }),
       inject: [ConfigService],
     }),

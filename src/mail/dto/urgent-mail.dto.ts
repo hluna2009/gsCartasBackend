@@ -8,4 +8,7 @@ export class UrgentMailDto {
   fechaIngreso: string;
   resumenRecibido: string;
   urgente: boolean;
+  estado: string;
+  pdfInfo: string;
+  archivosAdjuntos: string[];
 }

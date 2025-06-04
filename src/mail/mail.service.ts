@@ -26,7 +26,7 @@ export class MailService {
   async sendNotification(email: NotiMailDto, cartasPendientes: any[] = []) {
     const cartasParaTemplate = cartasPendientes.map((carta) => ({
       id: carta.id,
-      asunto: carta.asunto || 'Sin asunto',
+      asunto: carta?.asunto || 'Sin asunto',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
       fechaIngreso: carta.fechaIngreso
         ? new Date(carta.fechaIngreso).toLocaleDateString()
@@ -85,8 +85,10 @@ export class MailService {
     fechaIngreso,
     resumenRecibido,
     urgente,
+    estado,
+    pdfInfo,
+    archivosAdjuntos,
   }: UrgentMailDto) {
-    console.log('que datos llegan', email);
     const mailOptions = {
       to: email,
       subject: 'Urgente portal de Cartas',
@@ -94,6 +96,17 @@ export class MailService {
       context: {
         message: `Hola ${nombre}, tienes una carta urgente que atender`,
         link: `${process.env.HOST_API}`,
+        asunto,
+        fechaIngreso,
+        resumenRecibido,
+        urgente,
+        estado,
+        archivosAdjuntos:
+          archivosAdjuntos.length > 0
+            ? archivosAdjuntos.map((e) => `${process.env.HOST_API_FILE}/${e}`)
+            : null,
+        pdfInfo: pdfInfo ? `${process.env.HOST_API_FILE}/${pdfInfo}` : null,
+        year: new Date().getFullYear(),
       },
       headers: {
         // Marcar como urgente (Outlook y Gmail)

@@ -133,5 +133,13 @@ export class ReceivedCardDto {
   @ApiProperty({ description: 'Indica si la carta es urgente', default: false })
   @IsBoolean()
   urgente: boolean;
-}
 
+  @ApiProperty({
+    description: 'archivos adjuntos de la carta',
+    type: [String],
+    default: [],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  archivosAdjuntos: string[];
+}

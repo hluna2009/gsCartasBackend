@@ -76,7 +76,11 @@ async function bootstrap() {
   app.setBaseViewsDir(path.join(__dirname, '..', 'src', 'mail', 'templates'));
   app.setViewEngine('hbs');
 
-  await app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
     new ValidationPipe({

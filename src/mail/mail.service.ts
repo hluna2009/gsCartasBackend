@@ -37,11 +37,17 @@ export class MailService {
               (1000 * 60 * 60 * 24),
           )
         : 'N/A',
-      pdfInfo: carta.pdfInfo,
-      archivosAdjuntos: carta.archivosAdjuntos,
+      archivosAdjuntos:
+        carta.archivosAdjuntos.length > 0
+          ? carta.archivosAdjuntos.map(
+              (e) => `${process.env.HOST_API_FILE}/${e}`,
+            )
+          : null,
+      pdfInfo: carta.pdfInfo
+        ? `${process.env.HOST_API_FILE}/${carta.pdfInfo}`
+        : null,
     }));
 
-    this.logger.log('Llegamos aqui', cartasParaTemplate.length);
     const mailOptions = {
       to: email.email,
       subject:

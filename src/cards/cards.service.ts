@@ -107,10 +107,10 @@ export class CardsService {
 
             try {
               await this.mail.sendNotification(email, cartas);
-              this.logger.log(
-                `Correo enviado a ${usuario.email} con ${cartas.length} cartas ` +
-                  `(CC: ${ccList.length > 0 ? ccList.join(', ') : 'ninguno'})`,
-              );
+              // this.logger.log(
+              //   `Correo enviado a ${usuario.email} con ${cartas.length} cartas ` +
+              //     `(CC: ${ccList.length > 0 ? ccList.join(', ') : 'ninguno'})`,
+              // );
             } catch (error) {
               this.logger.error(
                 `Error al enviar correo a ${usuario.email}: ${error.message}`,

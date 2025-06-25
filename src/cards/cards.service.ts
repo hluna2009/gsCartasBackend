@@ -58,6 +58,51 @@ export class CardsService {
       await this.processSubArea(subAreaId, cartas.new, cartas.pending);
     }
   }
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async enviarCorreoRegistrosDiarios() {
+    this.logger.debug(
+      'Iniciando proceso de envío de correos para registros diarios',
+    );
+
+    const now = new Date();
+    const hace24Horas = new Date(Date.now() - 24 * 60 * 60 * 1000); // resta 24 horas
+
+    const cartasUltimas24Horas = await this.prisma.carta.findMany({
+      where: {
+        fechaIngreso: {
+          gte: hace24Horas,
+          lte: now,
+        },
+      },
+      include: {
+        Destinatario: true,
+        cartaAnterior: true,
+        respuestas: true,
+        areaResponsable: true,
+        subArea: true,
+        temaRelacion: true,
+        empresa: true,
+      },
+    });
+
+    const usuarios = await this.prisma.usuario.findMany({
+      where: {
+        area: {
+          id: {
+            in: [16, 17],
+          },
+        },
+      },
+      include: {
+        subArea: true,
+        area: true,
+      },
+    });
+
+    usuarios.forEach((usuario) => {
+      this.mail.sendRegistrosDiarios(usuario, cartasUltimas24Horas);
+    });
+  }
 
   private async processSubArea(
     subAreaId: bigint,

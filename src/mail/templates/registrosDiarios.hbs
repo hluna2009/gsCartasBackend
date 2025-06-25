@@ -1,0 +1,96 @@
+<html>
+  <head>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <title>Notificación de Cartas Pendientes</title>
+    <style>
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6; color: #333; background-color: #f5f7fa; margin: 0;
+      padding: 20px; } .container { max-width: 800px; margin: 0 auto;
+      background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px
+      rgba(0, 0, 0, 0.1); padding: 30px; } .header { text-align: center;
+      padding-bottom: 20px; border-bottom: 1px solid #eaeaea; margin-bottom:
+      25px; } .header h1 { color: #2c3e50; margin-bottom: 10px; } .badge {
+      display: inline-block; padding: 5px 10px; border-radius: 20px;
+      font-weight: bold; font-size: 14px; margin-bottom: 20px; } .badge-warning
+      { background-color: #fff3cd; color: #856404; } table { width: 100%;
+      border-collapse: collapse; margin: 20px 0; } th, td { padding: 12px 15px;
+      text-align: left; border-bottom: 1px solid #eaeaea; } th {
+      background-color: #f8f9fa; font-weight: 600; } tr:hover {
+      background-color: #f8f9fa; } .priority-high { color: #dc3545; font-weight:
+      bold; } .priority-medium { color: #fd7e14; } .btn { display: inline-block;
+      padding: 12px 24px; background-color: #3498db; color: white;
+      text-decoration: none; border-radius: 4px; font-weight: 600; margin-top:
+      20px; } .footer { margin-top: 30px; padding-top: 20px; border-top: 1px
+      solid #eaeaea; font-size: 14px; color: #7f8c8d; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class='container'>
+      <div class='header'>
+        <h1>Portal de Cartas Grupo Sur</h1>
+        <div class='badge badge-warning'>
+          {{totalCartas}}
+          carta(s) registrada(s)
+        </div>
+      </div>
+
+      <p>Hola <strong>{{nombre}}</strong>,</p>
+      <p>Se han registrado las siguientes cartas:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th scope='col'>ID</th>
+            <th scope='col'>Asunto</th>
+            <th scope='col'>Resumen Recibido</th>
+            <th scope='col'>Fecha Ingreso</th>
+            <th scope='col'>Días Pendiente</th>
+            <th scope='col'>Prioridad</th>
+            <th scope='col'>Archivos Adjuntos</th>
+            <th scope='col'>PDF</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each cartas}}
+            <tr>
+              <td>#{{id}}</td>
+              <td>{{asunto}}</td>
+              <td>{{resumenRecibido}}</td>
+              <td>{{fechaIngreso}}</td>
+              <td>{{diasPendiente}}</td>
+              <td>
+                {{#if urgente}}
+                  <span class='priority-high'>Alta</span>
+                {{else}}
+                  <span class='priority-medium'>Media</span>
+                {{/if}}
+              </td>
+              <td>
+                {{#each archivosAdjuntos}}
+                  <div>
+                    <a href='{{this}}' target='_blank'>Archivo adjunto</a>
+                  </div>
+                {{/each}}
+              </td>
+              <td>
+                <a href='{{pdfInfo}}' target='_blank'>Ver pdf</a>
+              </td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+
+      <div style='text-align: center; margin-top: 30px;'>
+        <a href='{{link}}' class='btn'>Ir al Portal de Cartas</a>
+      </div>
+
+      <div class='footer'>
+        <p>Fecha de notificación: {{fechaActual}}</p>
+        <p>©
+          {{year}}
+          Portal de Cartas Grupo Sur. Todos los derechos reservados.</p>
+      </div>
+    </div>
+  </body>
+</html>

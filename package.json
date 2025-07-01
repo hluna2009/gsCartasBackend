@@ -6,7 +6,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build ",
+    "prebuild": "mv dist dist_old || true",
+    "build": "nest build",
+    "postbuild": "cp -r dist_old/files dist/files || true && rm -rf dist_old",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

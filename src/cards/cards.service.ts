@@ -88,7 +88,7 @@ export class CardsService {
     const usuarios = await this.prisma.usuario.findMany({
       where: {
         id: {
-          in: [7, 56, 6, 8],
+          in: [7, 56, 6, 8, 4],
         },
       },
       include: {

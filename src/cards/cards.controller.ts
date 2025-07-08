@@ -26,7 +26,6 @@ export class CardsController {
   @Post()
   @ApiOperation({ summary: 'Crear una nueva Carta' })
   @ApiResponse({ status: 201, description: 'Carta creada exitosamente' })
-  @ApiResponse({ status: 400, description: 'Solicitud incorrecta' })
   create(@Body() createCardDto: CreateCardDto) {
     return this.cardsService.create(createCardDto);
   }

@@ -1,6 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ConsoleLogger, LoggerService, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConsoleLogger,
+  LoggerService,
+  ValidationPipe,
+} from '@nestjs/common';
 import { BigIntInterceptor } from './intercerptors/bigint.interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 //import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -82,11 +87,26 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   app.setGlobalPrefix('api/v1');
+  // app.useGlobalPipes(
+  //   new ValidationPipe({
+  //     transform: true,
+  //     transformOptions: {
+  //       enableImplicitConversion: true,
+  //     },
+  //   }),
+  // );
+
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      exceptionFactory: (errors) => {
+        const messages = errors.map(
+          (err) =>
+            `${err.property} - ${Object.values(err.constraints).join(', ')}`,
+        );
+        return new BadRequestException(messages);
       },
     }),
   );

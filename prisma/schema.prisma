@@ -118,6 +118,7 @@ model Carta {
   resumenEnviado  String?
   cartaEnviada    String?
   comentarioCargo String?
+  referenciaExterna String?
 
   motivoReapertura String?
   Destinatario     Destinatario @relation(fields: [destinatario], references: [id])

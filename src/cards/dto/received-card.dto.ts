@@ -98,6 +98,13 @@ export class ReceivedCardDto {
   referencia?: number; // Cambia a `number` si estás usando `BigInt` en el frontend o backend
 
   @ApiProperty({
+    description: 'Referencia Externa a la carta anterior (opcional)',
+    required: false,
+  })
+  @IsOptional()
+  referenciaExterna?: string;
+
+  @ApiProperty({
     description: 'Fecha de ingreso de la carta',
     example: '03-02-2024',
   })

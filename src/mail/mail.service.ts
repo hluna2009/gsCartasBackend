@@ -24,6 +24,9 @@ export class MailService {
   }
 
   async sendNotification(email: NotiMailDto, cartasPendientes: any[] = []) {
+    console.log(
+      `se esta enviando ${cartasPendientes.length} cartas a ${email.email}`,
+    );
     const cartasParaTemplate = cartasPendientes.map((carta) => ({
       id: carta.id,
       asunto: carta?.asunto || 'Sin asunto',
@@ -32,7 +35,7 @@ export class MailService {
       de: carta?.empresa.nombre || 'Sin Empresa',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
 
-      subArea: carta?.areaResponsable.nombbre || 'Sin Subarea',
+      subArea: carta?.subArea.nombre || 'Sin Subarea',
       informativo: carta?.informativo ? 'No' : 'Si',
 
       fechaIngreso: carta.fechaIngreso
@@ -104,7 +107,7 @@ export class MailService {
       de: carta?.empresa.nombre || 'Sin Empresa',
       asunto: carta?.asunto || 'Sin asunto',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
-      subArea: carta?.areaResponsable.nombbre || 'Sin Subarea',
+      subArea: carta?.subArea.nombre || 'Sin Subarea',
 
       informativo: carta?.informativo ? 'No' : 'Si',
       fechaIngreso: carta.fechaIngreso

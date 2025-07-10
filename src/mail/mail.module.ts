@@ -21,7 +21,7 @@ import { MailController } from './mail.controller';
           },
           pool: true, // 🔁 Reutiliza conexiones
           maxConnections: 5, // 🔢 Máximo de conexiones simultáneas
-          maxMessages: 100, // 💌 Mensajes por conexión
+          maxMessages: 500, // 💌 Mensajes por conexión
           rateLimit: 5,
           // tls: {
           //   ciphers: 'SSLv3'

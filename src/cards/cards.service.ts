@@ -15,6 +15,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
+import pLimit from 'p-limit';
 
 @Injectable()
 export class CardsService {
@@ -43,10 +44,13 @@ export class CardsService {
         },
       },
       include: {
-        subArea: true,
         Destinatario: true,
-        empresa: true,
+        cartaAnterior: true,
+        respuestas: true,
         areaResponsable: true,
+        subArea: true,
+        temaRelacion: true,
+        empresa: true,
       },
     });
 
@@ -94,6 +98,7 @@ export class CardsService {
       where: {
         id: {
           in: [6, 56, 60, 7, 8, 58, 59, 42, 41],
+          // in: [4],
         },
       },
       include: {
@@ -102,9 +107,21 @@ export class CardsService {
       },
     });
 
-    usuarios.forEach((usuario) => {
-      this.mail.sendRegistrosDiarios(usuario, cartasUltimas24Horas);
-    });
+    const limit = pLimit(3);
+    const tasks = usuarios.map((usuario) =>
+      limit(async () => {
+        try {
+          await this.mail.sendRegistrosDiarios(usuario, cartasUltimas24Horas);
+          this.logger.log(`Correo enviado a ${usuario.email}`);
+        } catch (err) {
+          this.logger.error(
+            `Error al enviar a ${usuario.email}: ${err.message}`,
+          );
+        }
+      }),
+    );
+
+    await Promise.all(tasks);
   }
 
   private async processSubArea(
@@ -141,33 +158,50 @@ export class CardsService {
       gruposCC.get(ccNormalizados).push(carta);
     }
 
-    await Promise.all(
-      usuarios.map((usuario) =>
-        Promise.all(
-          Array.from(gruposCC.entries()).map(async ([ccKey, cartas]) => {
-            const ccList = ccKey.split(';').filter(Boolean);
+    const limit = pLimit(3);
 
-            const email = {
-              email: usuario.email,
-              nombre: usuario.nombre,
-              cc: ccList,
-            };
-
-            try {
-              await this.mail.sendNotification(email, cartas);
-              // this.logger.log(
-              //   `Correo enviado a ${usuario.email} con ${cartas.length} cartas ` +
-              //     `(CC: ${ccList.length > 0 ? ccList.join(', ') : 'ninguno'})`,
-              // );
-            } catch (error) {
-              this.logger.error(
-                `Error al enviar correo a ${usuario.email}: ${error.message}`,
-              );
-            }
-          }),
-        ),
+    const tasks = usuarios.flatMap((usuario) =>
+      Array.from(gruposCC.entries()).map(([ccKey, cartas]) =>
+        limit(async () => {
+          const ccList = ccKey.split(';').filter(Boolean);
+          const email = {
+            email: usuario.email,
+            nombre: usuario.nombre,
+            cc: ccList,
+          };
+          await this.mail.sendNotification(email, cartas);
+        }),
       ),
     );
+
+    await Promise.all(tasks);
+    // await Promise.all(
+    //   usuarios.map((usuario) =>
+    //     Promise.all(
+    //       Array.from(gruposCC.entries()).map(async ([ccKey, cartas]) => {
+    //         const ccList = ccKey.split(';').filter(Boolean);
+    //
+    //         const email = {
+    //           email: usuario.email,
+    //           nombre: usuario.nombre,
+    //           cc: ccList,
+    //         };
+    //
+    //         try {
+    //           await this.mail.sendNotification(email, cartas);
+    //           // this.logger.log(
+    //           //   `Correo enviado a ${usuario.email} con ${cartas.length} cartas ` +
+    //           //     `(CC: ${ccList.length > 0 ? ccList.join(', ') : 'ninguno'})`,
+    //           // );
+    //         } catch (error) {
+    //           this.logger.error(
+    //             `Error al enviar correo a ${usuario.email}: ${error.message}`,
+    //           );
+    //         }
+    //       }),
+    //     ),
+    //   ),
+    // );
   }
   async create(createCardDto: CreateCardDto) {
     const { referencia, archivosAdjuntos, ...rest } = createCardDto;
@@ -637,8 +671,8 @@ export class CardsService {
 
     const cartas = await this.prisma.carta.findMany({
       where,
-      skip: (page - 1) * Number(limit),
-      take: Number(limit),
+      // skip: (page - 1) * Number(limit),
+      // take: Number(limit),
       orderBy: { id: 'desc' },
       include: {
         areaResponsable: true,
@@ -660,9 +694,9 @@ export class CardsService {
       data: datesFormated,
       meta: {
         total,
-        page,
-        limit,
-        last_page: Math.ceil(total / limit),
+        // page,
+        // limit,
+        // last_page: Math.ceil(total / limit),
       },
     };
   }

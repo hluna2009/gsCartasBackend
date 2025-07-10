@@ -58,6 +58,10 @@ export class MailController {
       totalCartas: 1,
       cartas: [
         {
+          codigoRecibido: 'COMUNIDAD CAMPESINA DE JILA INAMPO-01-2025-JILA',
+          de: 'COMUNIDAD CAMPESINA DE JILA INAMPO	',
+          para: 'OPERADORA SURPERU	',
+
           id: 1,
           asunto: 'asdasd',
           resumenRecibido: 'asdasd',

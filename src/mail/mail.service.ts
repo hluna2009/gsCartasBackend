@@ -27,6 +27,9 @@ export class MailService {
     const cartasParaTemplate = cartasPendientes.map((carta) => ({
       id: carta.id,
       asunto: carta?.asunto || 'Sin asunto',
+      codigoRecibido: carta.codigoRecibido,
+      para: carta?.Destinatario.nombre || 'Sin Destinatario',
+      de: carta?.empresa.nombre || 'Sin Empresa',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
       fechaIngreso: carta.fechaIngreso
         ? new Date(carta.fechaIngreso).toLocaleDateString()
@@ -93,7 +96,10 @@ export class MailService {
 
     const cartasParaTemplate = cartas.map((carta) => ({
       id: carta.id,
+      codigoRecibido: carta.codigoRecibido,
       asunto: carta?.asunto || 'Sin asunto',
+      para: carta?.Destinatario.nombre || 'Sin Destinatario',
+      de: carta?.empresa.nombre || 'Sin Empresa',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
       fechaIngreso: carta.fechaIngreso
         ? new Date(carta.fechaIngreso).toLocaleDateString()

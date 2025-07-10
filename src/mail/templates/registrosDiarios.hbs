@@ -23,6 +23,8 @@
       text-decoration: none; border-radius: 4px; font-weight: 600; margin-top:
       20px; } .footer { margin-top: 30px; padding-top: 20px; border-top: 1px
       solid #eaeaea; font-size: 14px; color: #7f8c8d; text-align: center; }
+      .container{ font-size:10px !important; } th, td { font-size: 10px; }
+
     </style>
   </head>
   <body>
@@ -41,11 +43,14 @@
       <table>
         <thead>
           <tr>
-            <th scope='col'>Codigo</th>
-            <th scope='col'>De</th>
-            <th scope='col'>Para</th>
-            <th scope='col'>Días Pendiente</th>
-            <th scope='col'>Prioridad</th>
+            <th scope='col'>Codigo de Documento</th>
+            <th scope='col'>Remitente</th>
+            <th scope='col'>Asunto</th>
+            <th scope='col'>Descripcion</th>
+            <th scope='col'>Subarea</th>
+            <th scope='col'>Necesidad de Respuesta</th>
+            <th scope='col'>Fecha</th>
+
             <th scope='col'>Archivos Adjuntos</th>
             <th scope='col'>PDF</th>
           </tr>
@@ -55,15 +60,11 @@
             <tr>
               <td>{{codigoRecibido}}</td>
               <td>{{de}}</td>
-              <td>{{para}}</td>
-              <td>{{diasPendiente}}</td>
-              <td>
-                {{#if urgente}}
-                  <span class='priority-high'>Alta</span>
-                {{else}}
-                  <span class='priority-medium'>Media</span>
-                {{/if}}
-              </td>
+              <td>{{asunto}}</td>
+              <td>{{resumenRecibido}}</td>
+              <td>{{subArea}}</td>
+              <td>{{informativo}}</td>
+              <td>{{fechaIngreso}}</td>
               <td>
                 {{#each archivosAdjuntos}}
                   <div>

@@ -42,7 +42,12 @@ export class CardsService {
           lte: todayDateString,
         },
       },
-      include: { subArea: true },
+      include: {
+        subArea: true,
+        Destinatario: true,
+        empresa: true,
+        areaResponsable: true,
+      },
     });
 
     const cartasPorSubArea = new Map<bigint, { new: any[]; pending: any[] }>();

@@ -31,6 +31,10 @@ export class MailService {
       para: carta?.Destinatario.nombre || 'Sin Destinatario',
       de: carta?.empresa.nombre || 'Sin Empresa',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
+
+      subArea: carta?.areaResponsable.nombbre || 'Sin Subarea',
+      informativo: carta?.informativo ? 'No' : 'Si',
+
       fechaIngreso: carta.fechaIngreso
         ? new Date(carta.fechaIngreso).toLocaleDateString()
         : 'No especificada',
@@ -97,13 +101,17 @@ export class MailService {
     const cartasParaTemplate = cartas.map((carta) => ({
       id: carta.id,
       codigoRecibido: carta.codigoRecibido,
-      asunto: carta?.asunto || 'Sin asunto',
-      para: carta?.Destinatario.nombre || 'Sin Destinatario',
       de: carta?.empresa.nombre || 'Sin Empresa',
+      asunto: carta?.asunto || 'Sin asunto',
       resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
+      subArea: carta?.areaResponsable.nombbre || 'Sin Subarea',
+
+      informativo: carta?.informativo ? 'No' : 'Si',
       fechaIngreso: carta.fechaIngreso
         ? new Date(carta.fechaIngreso).toLocaleDateString()
         : 'No especificada',
+
+      para: carta?.Destinatario.nombre || 'Sin Destinatario',
       diasPendiente: carta.fechaIngreso
         ? Math.floor(
             (new Date().getTime() - new Date(carta.fechaIngreso).getTime()) /

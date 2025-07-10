@@ -67,6 +67,8 @@ export class MailController {
           resumenRecibido: 'asdasd',
           fechaIngreso: '2025-04-28',
           urgente: true,
+          informativo: 'si',
+          subArea: 'subarea',
           archivosAdjuntos: ['asdasd', 'asdasd'],
           pdfInfo: 'asdasd.pdf',
           diasPendiente: 1,

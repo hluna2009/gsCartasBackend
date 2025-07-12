@@ -68,7 +68,7 @@ export class CardsService {
     }
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  // @Cron(CronExpression.EVERY_10_SECONDS)
   async correoBienvenida() {
     this.logger.debug('Iniciando proceso de envío de correos de bienvenida');
 

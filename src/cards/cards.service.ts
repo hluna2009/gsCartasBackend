@@ -67,6 +67,41 @@ export class CardsService {
       await this.processSubArea(subAreaId, cartas.new, cartas.pending);
     }
   }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async correoBienvenida() {
+    this.logger.debug('Iniciando proceso de envío de correos de bienvenida');
+
+    const usuarios = await this.prisma.usuario.findMany({
+      where: {
+        id: {
+          in: [4],
+        },
+      },
+      include: {
+        subArea: true,
+        area: true,
+      },
+    });
+
+    const limit = pLimit(3);
+
+    const tasks = usuarios.map((usuario) =>
+      limit(async () => {
+        try {
+          await this.mail.sendWelcome(usuario);
+          this.logger.log(`Correo enviado a ${usuario.email}`);
+        } catch (err) {
+          this.logger.error(
+            `Error al enviar a ${usuario.email}: ${err.message}`,
+          );
+        }
+      }),
+    );
+
+    await Promise.all(tasks);
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async enviarCorreoRegistrosDiarios() {
     this.logger.debug(
@@ -78,7 +113,7 @@ export class CardsService {
 
     const cartasUltimas24Horas = await this.prisma.carta.findMany({
       where: {
-        fechaIngreso: {
+        createdAt: {
           gte: hace24Horas,
           lte: now,
         },

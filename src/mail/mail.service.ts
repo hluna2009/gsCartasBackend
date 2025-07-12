@@ -10,6 +10,21 @@ export class MailService {
 
   constructor(private mailerService: MailerService) {}
 
+  async sendWelcome(data: any) {
+    const url = `http://192.168.120.139:3021/login`;
+    await this.mailerService.sendMail({
+      to: data.email,
+      subject: 'Welcome to Nice App!',
+      template: './welcome',
+      context: {
+        nombre: data.nombre,
+        url: url,
+        email: data.email,
+        password: '123456',
+      },
+    });
+  }
+
   async sendUserConfirmation(user: SendMailDto) {
     const url = `https://www.youtube.com/channel/UCvXekawNgmVfd615D52nNow`;
     await this.mailerService.sendMail({

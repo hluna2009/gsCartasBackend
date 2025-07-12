@@ -42,6 +42,11 @@ export class MailController {
     };
     return res.render(template, {
       message: 'Hola Elvis, tienes una carta urgente que atender',
+
+      nombre: 'zacarias',
+      email: 'zacarias@gmail.com',
+      password: '1234',
+
       link: `${process.env.HOST_API}`,
       asunto: carta.asunto,
       estado: carta.estado,
@@ -54,7 +59,6 @@ export class MailController {
       ),
       pdfInfo: `${process.env.HOST_API}/pdfs/${carta.pdfInfo}`,
 
-      nombre: 'asdasd',
       totalCartas: 1,
       cartas: [
         {

@@ -20,6 +20,7 @@ import {
   ApiOperation,
   ApiResponse,
 } from '@nestjs/swagger';
+import { resolve } from 'path';
 
 @Controller('fileupload')
 export class FileuploadController {
@@ -55,7 +56,7 @@ export class FileuploadController {
     FileInterceptor('file', {
       fileFilter: fileFilter,
       storage: diskStorage({
-        destination: 'files',
+        destination: resolve(__dirname, '..', '..', 'files'),
         filename: fileNamer,
       }),
     }),

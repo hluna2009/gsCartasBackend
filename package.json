@@ -6,9 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "if exist dist (ren dist dist_old)",
     "build": "nest build",
-    "postbuild": "if exist dist_old\\files (xcopy dist_old\\files dist\\files /E /I /Y) && rmdir /S /Q dist_old",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

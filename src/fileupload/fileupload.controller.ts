@@ -55,7 +55,7 @@ export class FileuploadController {
     FileInterceptor('file', {
       fileFilter: fileFilter,
       storage: diskStorage({
-        destination: './files',
+        destination: 'files',
         filename: fileNamer,
       }),
     }),

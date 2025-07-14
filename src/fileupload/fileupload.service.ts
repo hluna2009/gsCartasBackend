@@ -12,7 +12,7 @@ export class FileuploadService {
     const isProduction = this.configService.get('NODE_ENV') === 'prod';
 
     this.uploadPath = isProduction
-      ? join(__dirname, '../files/')
+      ? join(__dirname, '../../files/')
       : join(__dirname, '../../files/'); // En desarrollo, desde src/files/
 
     this.logger.log(

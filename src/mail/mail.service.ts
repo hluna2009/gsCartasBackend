@@ -107,6 +107,71 @@ export class MailService {
     }
   }
 
+  async sendResumenSemanal(email: any, cartas: any[]) {
+    const {
+      nombre,
+      email: emailTo,
+      asunto,
+      fechaIngreso = new Date(),
+      resumenRecibido,
+    } = email;
+
+    const cartasParaTemplate = cartas.map((carta) => ({
+      id: carta.id,
+      codigoRecibido: carta.codigoRecibido,
+      de: carta?.empresa.nombre || 'Sin Empresa',
+      asunto: carta?.asunto || 'Sin asunto',
+      resumenRecibido: carta.resumenRecibido || 'Resumen no especificado',
+      subArea: carta?.subArea.nombre || 'Sin Subarea',
+
+      informativo: carta?.informativo ? 'No' : 'Si',
+      fechaIngreso: carta.fechaIngreso
+        ? new Date(carta.fechaIngreso).toLocaleDateString()
+        : 'No especificada',
+
+      para: carta?.Destinatario.nombre || 'Sin Destinatario',
+      diasPendiente: carta.fechaIngreso
+        ? Math.floor(
+            (new Date().getTime() - new Date(carta.fechaIngreso).getTime()) /
+              (1000 * 60 * 60 * 24),
+          )
+        : 'N/A',
+      archivosAdjuntos:
+        carta.archivosAdjuntos.length > 0
+          ? carta.archivosAdjuntos.map(
+              (e) => `${process.env.HOST_API_FILE}/${e}`,
+            )
+          : null,
+      pdfInfo: carta.pdfInfo
+        ? `${process.env.HOST_API_FILE}/${carta.pdfInfo}`
+        : null,
+    }));
+
+    const mailOptions = {
+      to: emailTo,
+      subject: `CARTAS DIARIAS ${fechaIngreso.toLocaleDateString()}`,
+      template: './resumenSemanal',
+      context: {
+        nombre,
+        totalCartas: cartas.length,
+        cartas: cartasParaTemplate,
+        link: `${process.env.HOST_API}`,
+        fechaActual: new Date().toLocaleDateString(),
+        year: '2025',
+      },
+    };
+
+    try {
+      await this.mailerService.sendMail(mailOptions);
+      this.logger.log(
+        `Correo enviado correctamente a ${emailTo} con ${cartas.length} cartas`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error al enviar correo a ${emailTo}: ${error.message}`,
+      );
+    }
+  }
   async sendRegistrosDiarios(email: any, cartas: any[]) {
     const {
       nombre,

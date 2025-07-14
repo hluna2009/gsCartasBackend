@@ -16,6 +16,7 @@ import { MailService } from 'src/mail/mail.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
 import pLimit from 'p-limit';
+import { endOfWeek, startOfWeek } from 'date-fns';
 
 @Injectable()
 export class CardsService {
@@ -102,6 +103,69 @@ export class CardsService {
     await Promise.all(tasks);
   }
 
+  @Cron(CronExpression.EVERY_WEEK)
+  async enviarResumenSemanal() {
+    const hoy = new Date(); // ahora en UTC
+    const inicioSemana = startOfWeek(hoy, { weekStartsOn: 1 }); // lunes 00:00
+    const finSemana = endOfWeek(hoy, { weekStartsOn: 1 }); // domingo 23:59:59.999
+
+    this.logger.debug(
+      `Enviando resumen semanal (${inicioSemana.toISOString()} – ${finSemana.toISOString()})`,
+    );
+
+    const jefes = await this.prisma.usuario.findMany({
+      where: { jefe: 'si' },
+      include: {
+        subArea: {
+          // ← usa plural si la relación es 1‑N
+          include: {
+            cartas: {
+              include: {
+                Destinatario: true,
+                cartaAnterior: true,
+                respuestas: true,
+                areaResponsable: true,
+                subArea: true,
+                temaRelacion: true,
+                empresa: true,
+              },
+              where: {
+                createdAt: {
+                  gte: inicioSemana,
+                  lte: finSemana,
+                },
+              },
+            },
+          },
+        },
+        area: true,
+      },
+    });
+
+    const limit = pLimit(3);
+
+    await Promise.all(
+      jefes.map((jefe) =>
+        limit(async () => {
+          const cartasSemanales = jefe.subArea.cartas;
+
+          if (cartasSemanales.length === 0) {
+            this.logger.debug(`Sin cartas para ${jefe.email} esta semana`);
+            return;
+          }
+
+          try {
+            await this.mail.sendResumenSemanal(jefe, cartasSemanales);
+            this.logger.log(`Resumen semanal enviado a ${jefe.email}`);
+          } catch (err) {
+            this.logger.error(
+              `Error al enviar a ${jefe.email}: ${err.message}`,
+            );
+          }
+        }),
+      ),
+    );
+  }
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async enviarCorreoRegistrosDiarios() {
     this.logger.debug(

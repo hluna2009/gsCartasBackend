@@ -103,7 +103,7 @@ export class CardsService {
     await Promise.all(tasks);
   }
 
-  @Cron(CronExpression.EVERY_WEEK)
+  @Cron('55 23 * * 0')
   async enviarResumenSemanal() {
     const hoy = new Date(); // ahora en UTC
     const inicioSemana = startOfWeek(hoy, { weekStartsOn: 1 }); // lunes 00:00

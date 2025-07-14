@@ -15,7 +15,6 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
-import pLimit from 'p-limit';
 import { endOfWeek, startOfWeek } from 'date-fns';
 
 @Injectable()
@@ -85,6 +84,7 @@ export class CardsService {
       },
     });
 
+    const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
 
     const tasks = usuarios.map((usuario) =>
@@ -142,6 +142,7 @@ export class CardsService {
       },
     });
 
+    const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
 
     await Promise.all(
@@ -206,7 +207,9 @@ export class CardsService {
       },
     });
 
+    const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
+
     const tasks = usuarios.map((usuario) =>
       limit(async () => {
         try {
@@ -257,6 +260,7 @@ export class CardsService {
       gruposCC.get(ccNormalizados).push(carta);
     }
 
+    const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
 
     const tasks = usuarios.flatMap((usuario) =>

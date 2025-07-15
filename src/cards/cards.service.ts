@@ -169,14 +169,19 @@ export class CardsService {
   // }
   //
 
-  // ──────────────────────────────────────────────────────────────
-  // 1) Resumen global para las áreas 11, 16, 1
-  // ──────────────────────────────────────────────────────────────
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async prueba() {
+    this.logger.debug('Iniciando prueba');
+    this.mail.sendUserConfirmation({
+      email: 'zuiersadien@gmail.com',
+      nombre: 'Test',
+    });
+  }
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async resumenCartasEstablecidas(): Promise<void> {
     this.logger.debug('Iniciando resumen de cartas establecidas');
 
-    const areaIds = [11, 16, 1];
+    const areaIds = [17, 16, 1];
     const usuarios = await this.prisma.usuario.findMany({
       where: { areaId: { in: areaIds } },
       include: { subArea: true, area: true },
@@ -241,6 +246,7 @@ export class CardsService {
     const usuarios = await this.prisma.usuario.findMany({
       where: {
         jefe: 'si',
+        areaId: { notIn: [17, 16, 1] },
       },
       include: {
         area: {
@@ -292,9 +298,6 @@ export class CardsService {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────
-  // 2) Resumen por sub‑área (excluye usuarios 11, 16, 1)
-  // ──────────────────────────────────────────────────────────────
   @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async enviarCorreoRegistrosDiariosPorSubArea(): Promise<void> {
     this.logger.debug('Iniciando envío de registros diarios por sub‑área');
@@ -304,7 +307,7 @@ export class CardsService {
 
     const usuarios = await this.prisma.usuario.findMany({
       where: {
-        areaId: { notIn: [11, 16, 1] },
+        areaId: { notIn: [17, 16, 1] },
         jefe: 'no',
       },
       include: {

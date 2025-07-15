@@ -172,7 +172,7 @@ export class MailService {
       );
     }
   }
-  async sendRegistrosDiarios(email: any, cartas: any[]) {
+  async sendRegistrosDiarios(email: any, cartas: any[], tipo: string) {
     const {
       nombre,
       email: emailTo,
@@ -180,6 +180,15 @@ export class MailService {
       fechaIngreso = new Date(),
       resumenRecibido,
     } = email;
+
+    let tipoCartas = '';
+    if (tipo === 'area') {
+      tipoCartas = 'AREA';
+    } else if (tipo === 'subarea') {
+      tipoCartas = 'SUBAREA';
+    } else if (tipo === 'total') {
+      tipoCartas = 'REGISTRADAS';
+    }
 
     const cartasParaTemplate = cartas.map((carta) => ({
       id: carta.id,
@@ -214,7 +223,7 @@ export class MailService {
 
     const mailOptions = {
       to: emailTo,
-      subject: `CARTAS DIARIAS ${fechaIngreso.toLocaleDateString()}`,
+      subject: `CARTAS DIARIAS - ${tipoCartas}`,
       template: './registrosDiarios',
       context: {
         nombre,

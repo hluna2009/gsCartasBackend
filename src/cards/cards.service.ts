@@ -211,7 +211,76 @@ export class CardsService {
       usuarios.map((usuario) =>
         limit(async () => {
           try {
-            await this.mail.sendRegistrosDiarios(usuario, cartas);
+            console.log(usuario.nombre, cartas.length);
+            await this.mail.sendRegistrosDiarios(usuario, cartas, 'total');
+
+            if (cartas.length === 0) {
+              this.logger.debug(
+                `Sin cartas para ${usuario.nombre} esta semana`,
+              );
+              return;
+            }
+            this.logger.log(`Correo enviado a ${usuario.email}`);
+          } catch (err) {
+            this.logger.error(
+              `Error al enviar a ${usuario.email}: ${err.message}`,
+            );
+          }
+        }),
+      ),
+    );
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async enviosDiariosPorJefatura() {
+    this.logger.debug(`Iniciando envío de correos diarios por jefatura`);
+
+    const ahora = new Date();
+    const hace24Horas = subHours(ahora, 24);
+
+    const usuarios = await this.prisma.usuario.findMany({
+      where: {
+        jefe: 'si',
+      },
+      include: {
+        area: {
+          include: {
+            cartas: {
+              where: { createdAt: { gte: hace24Horas, lte: ahora } },
+              include: {
+                Destinatario: true,
+                cartaAnterior: true,
+                respuestas: true,
+                areaResponsable: true,
+                subArea: true,
+                temaRelacion: true,
+                empresa: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const { default: pLimit } = await import('p-limit');
+    const limit = pLimit(3);
+
+    await Promise.all(
+      usuarios.map((usuario) =>
+        limit(async () => {
+          const cartasUltimas24Horas = usuario.area?.cartas ?? [];
+
+          console.log(cartasUltimas24Horas.length, usuario.nombre);
+
+          if (cartasUltimas24Horas.length === 0) {
+            this.logger.debug(`Sin cartas para ${usuario.nombre} esta semana`);
+            return;
+          }
+          try {
+            await this.mail.sendRegistrosDiarios(
+              usuario,
+              cartasUltimas24Horas,
+              'area',
+            );
             this.logger.log(`Correo enviado a ${usuario.email}`);
           } catch (err) {
             this.logger.error(
@@ -234,7 +303,10 @@ export class CardsService {
     const hace24Horas = subHours(ahora, 24);
 
     const usuarios = await this.prisma.usuario.findMany({
-      where: { id: { notIn: [11, 16, 1] } },
+      where: {
+        areaId: { notIn: [11, 16, 1] },
+        jefe: 'no',
+      },
       include: {
         area: true,
         subArea: {
@@ -265,8 +337,17 @@ export class CardsService {
 
           console.log(cartasUltimas24Horas.length, usuario.nombre);
 
+          if (cartasUltimas24Horas.length === 0) {
+            this.logger.debug(`Sin cartas para ${usuario.nombre} esta semana`);
+            return;
+          }
+
           try {
-            await this.mail.sendRegistrosDiarios(usuario, cartasUltimas24Horas);
+            await this.mail.sendRegistrosDiarios(
+              usuario,
+              cartasUltimas24Horas,
+              'subarea',
+            );
             this.logger.log(`Correo enviado a ${usuario.email}`);
           } catch (err) {
             this.logger.error(

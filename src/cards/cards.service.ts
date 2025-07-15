@@ -231,7 +231,7 @@ export class CardsService {
     );
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
   async enviosDiariosPorJefatura() {
     this.logger.debug(`Iniciando envío de correos diarios por jefatura`);
 

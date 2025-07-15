@@ -542,6 +542,7 @@ export class CardsService {
         temaRelacion: true,
         empresa: true,
         respuestas: true,
+        Destinatario: true,
       },
     });
 

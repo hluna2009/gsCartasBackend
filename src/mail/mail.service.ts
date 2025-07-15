@@ -26,6 +26,7 @@ export class MailService {
   }
 
   async sendUserConfirmation(user: SendMailDto) {
+    console.log('data', user);
     const url = `https://www.youtube.com/channel/UCvXekawNgmVfd615D52nNow`;
     await this.mailerService.sendMail({
       to: user.email,
@@ -34,6 +35,8 @@ export class MailService {
       context: {
         nombre: user.nombre,
         url,
+        password: '123456',
+        email: user.email,
       },
     });
   }

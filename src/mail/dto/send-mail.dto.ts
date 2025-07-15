@@ -1,5 +1,4 @@
 export class SendMailDto {
-
-    email: string;
-    nombre: string;
+  email: string;
+  nombre: string;
 }

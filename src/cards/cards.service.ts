@@ -169,7 +169,7 @@ export class CardsService {
   // }
   //
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async prueba() {
     this.logger.debug('Iniciando prueba');
     this.mail.sendUserConfirmation({

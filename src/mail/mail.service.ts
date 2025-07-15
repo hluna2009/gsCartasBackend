@@ -30,7 +30,7 @@ export class MailService {
     const url = `https://www.youtube.com/channel/UCvXekawNgmVfd615D52nNow`;
     await this.mailerService.sendMail({
       to: user.email,
-      subject: 'Welcome to Nice App!',
+      subject: 'Se esta enviando el correo bien!',
       template: './welcome',
       context: {
         nombre: user.nombre,

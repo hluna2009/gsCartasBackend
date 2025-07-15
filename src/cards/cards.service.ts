@@ -15,7 +15,7 @@ import { PaginationDto } from 'src/common/dto/pagination.dto';
 import { MailService } from 'src/mail/mail.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
-import { endOfWeek, startOfWeek } from 'date-fns';
+import { endOfWeek, startOfWeek, subHours } from 'date-fns';
 
 @Injectable()
 export class CardsService {
@@ -26,48 +26,48 @@ export class CardsService {
     private mail: MailService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
-  async handleCron() {
-    this.logger.debug(
-      'Iniciando proceso de envío de correos para cartas pendientes',
-    );
-
-    const today = new Date();
-    const todayDateString = new Date(today.setHours(23, 59, 59, 999));
-
-    const newCards = await this.prisma.carta.findMany({
-      where: {
-        estado: 'Ingresado',
-        fechaEnvio: null,
-        fechaIngreso: {
-          lte: todayDateString,
-        },
-      },
-      include: {
-        Destinatario: true,
-        cartaAnterior: true,
-        respuestas: true,
-        areaResponsable: true,
-        subArea: true,
-        temaRelacion: true,
-        empresa: true,
-      },
-    });
-
-    const cartasPorSubArea = new Map<bigint, { new: any[]; pending: any[] }>();
-
-    for (const carta of newCards) {
-      if (!cartasPorSubArea.has(carta.subAreaId)) {
-        cartasPorSubArea.set(carta.subAreaId, { new: [], pending: [] });
-      }
-      cartasPorSubArea.get(carta.subAreaId).new.push(carta);
-    }
-
-    for (const [subAreaId, cartas] of cartasPorSubArea.entries()) {
-      await this.processSubArea(subAreaId, cartas.new, cartas.pending);
-    }
-  }
-
+  // @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  // async handleCron() {
+  //   this.logger.debug(
+  //     'Iniciando proceso de envío de correos para cartas pendientes',
+  //   );
+  //
+  //   const today = new Date();
+  //   const todayDateString = new Date(today.setHours(23, 59, 59, 999));
+  //
+  //   const newCards = await this.prisma.carta.findMany({
+  //     where: {
+  //       estado: 'Ingresado',
+  //       fechaEnvio: null,
+  //       fechaIngreso: {
+  //         lte: todayDateString,
+  //       },
+  //     },
+  //     include: {
+  //       Destinatario: true,
+  //       cartaAnterior: true,
+  //       respuestas: true,
+  //       areaResponsable: true,
+  //       subArea: true,
+  //       temaRelacion: true,
+  //       empresa: true,
+  //     },
+  //   });
+  //
+  //   const cartasPorSubArea = new Map<bigint, { new: any[]; pending: any[] }>();
+  //
+  //   for (const carta of newCards) {
+  //     if (!cartasPorSubArea.has(carta.subAreaId)) {
+  //       cartasPorSubArea.set(carta.subAreaId, { new: [], pending: [] });
+  //     }
+  //     cartasPorSubArea.get(carta.subAreaId).new.push(carta);
+  //   }
+  //
+  //   for (const [subAreaId, cartas] of cartasPorSubArea.entries()) {
+  //     await this.processSubArea(subAreaId, cartas.new, cartas.pending);
+  //   }
+  // }
+  //
   // @Cron(CronExpression.EVERY_10_SECONDS)
   async correoBienvenida() {
     this.logger.debug('Iniciando proceso de envío de correos de bienvenida');
@@ -103,86 +103,90 @@ export class CardsService {
     await Promise.all(tasks);
   }
 
-  @Cron('55 23 * * 0')
-  async enviarResumenSemanal() {
-    const hoy = new Date(); // ahora en UTC
-    const inicioSemana = startOfWeek(hoy, { weekStartsOn: 1 }); // lunes 00:00
-    const finSemana = endOfWeek(hoy, { weekStartsOn: 1 }); // domingo 23:59:59.999
+  // @Cron('55 23 * * 0')
+  // async enviarResumenSemanal() {
+  //   const hoy = new Date(); // ahora en UTC
+  //   const inicioSemana = startOfWeek(hoy, { weekStartsOn: 1 }); // lunes 00:00
+  //   const finSemana = endOfWeek(hoy, { weekStartsOn: 1 }); // domingo 23:59:59.999
+  //
+  //   this.logger.debug(
+  //     `Enviando resumen semanal (${inicioSemana.toISOString()} – ${finSemana.toISOString()})`,
+  //   );
+  //
+  //   const jefes = await this.prisma.usuario.findMany({
+  //     where: { jefe: 'si' },
+  //     include: {
+  //       subArea: {
+  //         // ← usa plural si la relación es 1‑N
+  //         include: {
+  //           cartas: {
+  //             include: {
+  //               Destinatario: true,
+  //               cartaAnterior: true,
+  //               respuestas: true,
+  //               areaResponsable: true,
+  //               subArea: true,
+  //               temaRelacion: true,
+  //               empresa: true,
+  //             },
+  //             where: {
+  //               createdAt: {
+  //                 gte: inicioSemana,
+  //                 lte: finSemana,
+  //               },
+  //             },
+  //           },
+  //         },
+  //       },
+  //       area: true,
+  //     },
+  //   });
+  //
+  //   const { default: pLimit } = await import('p-limit');
+  //   const limit = pLimit(3);
+  //
+  //   await Promise.all(
+  //     jefes.map((jefe) =>
+  //       limit(async () => {
+  //         const cartasSemanales = jefe.subArea.cartas;
+  //
+  //         if (cartasSemanales.length === 0) {
+  //           this.logger.debug(`Sin cartas para ${jefe.email} esta semana`);
+  //           return;
+  //         }
+  //
+  //         try {
+  //           await this.mail.sendResumenSemanal(jefe, cartasSemanales);
+  //           this.logger.log(`Resumen semanal enviado a ${jefe.email}`);
+  //         } catch (err) {
+  //           this.logger.error(
+  //             `Error al enviar a ${jefe.email}: ${err.message}`,
+  //           );
+  //         }
+  //       }),
+  //     ),
+  //   );
+  // }
+  //
 
-    this.logger.debug(
-      `Enviando resumen semanal (${inicioSemana.toISOString()} – ${finSemana.toISOString()})`,
-    );
+  // ──────────────────────────────────────────────────────────────
+  // 1) Resumen global para las áreas 11, 16, 1
+  // ──────────────────────────────────────────────────────────────
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async resumenCartasEstablecidas(): Promise<void> {
+    this.logger.debug('Iniciando resumen de cartas establecidas');
 
-    const jefes = await this.prisma.usuario.findMany({
-      where: { jefe: 'si' },
-      include: {
-        subArea: {
-          // ← usa plural si la relación es 1‑N
-          include: {
-            cartas: {
-              include: {
-                Destinatario: true,
-                cartaAnterior: true,
-                respuestas: true,
-                areaResponsable: true,
-                subArea: true,
-                temaRelacion: true,
-                empresa: true,
-              },
-              where: {
-                createdAt: {
-                  gte: inicioSemana,
-                  lte: finSemana,
-                },
-              },
-            },
-          },
-        },
-        area: true,
-      },
+    const areaIds = [11, 16, 1];
+    const usuarios = await this.prisma.usuario.findMany({
+      where: { areaId: { in: areaIds } },
+      include: { subArea: true, area: true },
     });
 
-    const { default: pLimit } = await import('p-limit');
-    const limit = pLimit(3);
+    const ahora = new Date();
+    const hace24Horas = subHours(ahora, 24);
 
-    await Promise.all(
-      jefes.map((jefe) =>
-        limit(async () => {
-          const cartasSemanales = jefe.subArea.cartas;
-
-          if (cartasSemanales.length === 0) {
-            this.logger.debug(`Sin cartas para ${jefe.email} esta semana`);
-            return;
-          }
-
-          try {
-            await this.mail.sendResumenSemanal(jefe, cartasSemanales);
-            this.logger.log(`Resumen semanal enviado a ${jefe.email}`);
-          } catch (err) {
-            this.logger.error(
-              `Error al enviar a ${jefe.email}: ${err.message}`,
-            );
-          }
-        }),
-      ),
-    );
-  }
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
-  async enviarCorreoRegistrosDiarios() {
-    this.logger.debug(
-      'Iniciando proceso de envío de correos para registros diarios',
-    );
-
-    const now = new Date();
-    const hace24Horas = new Date(Date.now() - 24 * 60 * 60 * 1000); // resta 24 horas
-
-    const cartasUltimas24Horas = await this.prisma.carta.findMany({
-      where: {
-        createdAt: {
-          gte: hace24Horas,
-          lte: now,
-        },
-      },
+    const cartas = await this.prisma.carta.findMany({
+      where: { createdAt: { gte: hace24Horas, lte: ahora } },
       include: {
         Destinatario: true,
         cartaAnterior: true,
@@ -194,36 +198,84 @@ export class CardsService {
       },
     });
 
-    const usuarios = await this.prisma.usuario.findMany({
-      where: {
-        id: {
-          in: [6, 56, 60, 7, 8, 58, 59, 42, 41],
-          // in: [4],
-        },
-      },
-      include: {
-        subArea: true,
-        area: true,
-      },
-    });
+    if (!cartas.length) {
+      this.logger.debug(
+        'No hay cartas en las últimas 24 h; se omite el envío.',
+      );
+      return;
+    }
 
     const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
-
-    const tasks = usuarios.map((usuario) =>
-      limit(async () => {
-        try {
-          await this.mail.sendRegistrosDiarios(usuario, cartasUltimas24Horas);
-          this.logger.log(`Correo enviado a ${usuario.email}`);
-        } catch (err) {
-          this.logger.error(
-            `Error al enviar a ${usuario.email}: ${err.message}`,
-          );
-        }
-      }),
+    await Promise.all(
+      usuarios.map((usuario) =>
+        limit(async () => {
+          try {
+            await this.mail.sendRegistrosDiarios(usuario, cartas);
+            this.logger.log(`Correo enviado a ${usuario.email}`);
+          } catch (err) {
+            this.logger.error(
+              `Error al enviar a ${usuario.email}: ${err.message}`,
+            );
+          }
+        }),
+      ),
     );
+  }
 
-    await Promise.all(tasks);
+  // ──────────────────────────────────────────────────────────────
+  // 2) Resumen por sub‑área (excluye usuarios 11, 16, 1)
+  // ──────────────────────────────────────────────────────────────
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async enviarCorreoRegistrosDiariosPorSubArea(): Promise<void> {
+    this.logger.debug('Iniciando envío de registros diarios por sub‑área');
+
+    const ahora = new Date();
+    const hace24Horas = subHours(ahora, 24);
+
+    const usuarios = await this.prisma.usuario.findMany({
+      where: { id: { notIn: [11, 16, 1] } },
+      include: {
+        area: true,
+        subArea: {
+          include: {
+            cartas: {
+              where: { createdAt: { gte: hace24Horas, lte: ahora } },
+              include: {
+                Destinatario: true,
+                cartaAnterior: true,
+                respuestas: true,
+                areaResponsable: true,
+                subArea: true,
+                temaRelacion: true,
+                empresa: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    const { default: pLimit } = await import('p-limit');
+    const limit = pLimit(3);
+
+    await Promise.all(
+      usuarios.map((usuario) =>
+        limit(async () => {
+          const cartasUltimas24Horas = usuario.subArea?.cartas ?? [];
+
+          console.log(cartasUltimas24Horas.length, usuario.nombre);
+
+          try {
+            await this.mail.sendRegistrosDiarios(usuario, cartasUltimas24Horas);
+            this.logger.log(`Correo enviado a ${usuario.email}`);
+          } catch (err) {
+            this.logger.error(
+              `Error al enviar a ${usuario.email}: ${err.message}`,
+            );
+          }
+        }),
+      ),
+    );
   }
 
   private async processSubArea(
@@ -755,18 +807,17 @@ export class CardsService {
 
     if (subAreaId === 0) {
       where = {
+        informativo: false,
+
         estado: {
-          in: ['Ingresado', 'Respondido'],
+          in: ['Ingresado'],
         },
       };
     } else {
       where = {
+        informativo: false,
         subAreaId: subAreaId,
-        AND: [
-          {
-            estado: 'Ingresado',
-          },
-        ],
+        estado: 'Ingresado',
       };
     }
 

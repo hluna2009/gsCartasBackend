@@ -172,7 +172,8 @@ export class CardsService {
   @Cron(CronExpression.EVERY_DAY_AT_9AM)
   async prueba() {
     this.logger.debug('Iniciando prueba');
-    this.mail.sendUserConfirmation({
+
+    await this.mail.sendUserConfirmation({
       email: 'zuiersadien@gmail.com',
       nombre: 'Test',
     });
@@ -205,13 +206,18 @@ export class CardsService {
         },
       },
     });
-    console.log(usuarios.length);
-    const pLimit = (await import('p-limit')).default;
-    const limit = pLimit(3);
 
-    await Promise.all(
-      usuarios.map((usuario) =>
-        limit(async () => {
+    this.logger.debug(`Total de usuarios encontrados: ${usuarios.length}`);
+
+    const concurrency = 3;
+    let index = 0;
+
+    while (index < usuarios.length) {
+      const batch = usuarios.slice(index, index + concurrency);
+      index += concurrency;
+
+      await Promise.all(
+        batch.map(async (usuario) => {
           const cartasUltimas24Horas = usuario.subArea?.cartas ?? [];
 
           console.log(cartasUltimas24Horas.length, usuario.nombre);
@@ -235,10 +241,12 @@ export class CardsService {
             );
           }
         }),
-      ),
-    );
+      );
+    }
+
     return usuarios;
   }
+
   @Cron(CronExpression.EVERY_DAY_AT_10AM, {
     name: 'resumenCartas',
     timeZone: 'America/Lima',
@@ -277,31 +285,39 @@ export class CardsService {
       return;
     }
 
-    const pLimit = (await import('p-limit')).default;
+    const concurrency = 3;
+    let index = 0;
 
-    const limit = pLimit(3);
-    await Promise.all(
-      usuarios.map((usuario) =>
-        limit(async () => {
-          try {
-            console.log(usuario.nombre, cartas.length);
-            await this.mail.sendRegistrosDiarios(usuario, cartas, 'total');
+    const ejecutarConLimite = async () => {
+      while (index < usuarios.length) {
+        const grupo = usuarios.slice(index, index + concurrency);
+        index += concurrency;
 
-            if (cartas.length === 0) {
-              this.logger.debug(
-                `Sin cartas para ${usuario.nombre} esta semana`,
+        await Promise.all(
+          grupo.map(async (usuario) => {
+            try {
+              console.log(usuario.nombre, cartas.length);
+              await this.mail.sendRegistrosDiarios(usuario, cartas, 'total');
+
+              if (cartas.length === 0) {
+                this.logger.debug(
+                  `Sin cartas para ${usuario.nombre} esta semana`,
+                );
+                return;
+              }
+
+              this.logger.log(`Correo enviado a ${usuario.email}`);
+            } catch (err) {
+              this.logger.error(
+                `Error al enviar a ${usuario.email}: ${err.message}`,
               );
-              return;
             }
-            this.logger.log(`Correo enviado a ${usuario.email}`);
-          } catch (err) {
-            this.logger.error(
-              `Error al enviar a ${usuario.email}: ${err.message}`,
-            );
-          }
-        }),
-      ),
-    );
+          }),
+        );
+      }
+    };
+
+    await ejecutarConLimite();
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10AM, {
@@ -340,13 +356,15 @@ export class CardsService {
     });
     console.log(usuarios.length);
 
-    const pLimit = (await import('p-limit')).default;
+    const concurrency = 3;
+    let index = 0;
 
-    const limit = pLimit(3);
+    while (index < usuarios.length) {
+      const batch = usuarios.slice(index, index + concurrency);
+      index += concurrency;
 
-    await Promise.all(
-      usuarios.map((usuario) =>
-        limit(async () => {
+      await Promise.all(
+        batch.map(async (usuario) => {
           const cartasUltimas24Horas = usuario.area?.cartas ?? [];
 
           console.log(cartasUltimas24Horas.length, usuario.nombre);
@@ -355,6 +373,7 @@ export class CardsService {
             this.logger.debug(`Sin cartas para ${usuario.nombre} esta semana`);
             return;
           }
+
           try {
             await this.mail.sendRegistrosDiarios(
               usuario,
@@ -368,8 +387,8 @@ export class CardsService {
             );
           }
         }),
-      ),
-    );
+      );
+    }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_10AM, {
@@ -407,14 +426,15 @@ export class CardsService {
         },
       },
     });
-    console.log(usuarios.length);
+    const concurrency = 3;
+    let index = 0;
 
-    const pLimit = (await import('p-limit')).default;
-    const limit = pLimit(3);
+    while (index < usuarios.length) {
+      const batch = usuarios.slice(index, index + concurrency);
+      index += concurrency;
 
-    await Promise.all(
-      usuarios.map((usuario) =>
-        limit(async () => {
+      await Promise.all(
+        batch.map(async (usuario) => {
           const cartasUltimas24Horas = usuario.subArea?.cartas ?? [];
 
           console.log(cartasUltimas24Horas.length, usuario.nombre);
@@ -437,8 +457,8 @@ export class CardsService {
             );
           }
         }),
-      ),
-    );
+      );
+    }
   }
 
   private async processSubArea(

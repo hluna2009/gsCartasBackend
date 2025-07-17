@@ -84,23 +84,23 @@ export class CardsService {
       },
     });
 
-    const { default: pLimit } = await import('p-limit');
-    const limit = pLimit(3);
-
-    const tasks = usuarios.map((usuario) =>
-      limit(async () => {
-        try {
-          await this.mail.sendWelcome(usuario);
-          this.logger.log(`Correo enviado a ${usuario.email}`);
-        } catch (err) {
-          this.logger.error(
-            `Error al enviar a ${usuario.email}: ${err.message}`,
-          );
-        }
-      }),
-    );
-
-    await Promise.all(tasks);
+    // const { default: pLimit } = await import('p-limit');
+    // const limit = pLimit(3);
+    //
+    // const tasks = usuarios.map((usuario) =>
+    //   limit(async () => {
+    //     try {
+    //       await this.mail.sendWelcome(usuario);
+    //       this.logger.log(`Correo enviado a ${usuario.email}`);
+    //     } catch (err) {
+    //       this.logger.error(
+    //         `Error al enviar a ${usuario.email}: ${err.message}`,
+    //       );
+    //     }
+    //   }),
+    // );
+    //
+    // await Promise.all(tasks);
   }
 
   // @Cron('55 23 * * 0')
@@ -495,24 +495,24 @@ export class CardsService {
       gruposCC.get(ccNormalizados).push(carta);
     }
 
-    const { default: pLimit } = await import('p-limit');
-    const limit = pLimit(3);
+    // const { default: pLimit } = await import('p-limit');
+    // const limit = pLimit(3);
+    //
+    // const tasks = usuarios.flatMap((usuario) =>
+    //   Array.from(gruposCC.entries()).map(([ccKey, cartas]) =>
+    //     limit(async () => {
+    //       const ccList = ccKey.split(';').filter(Boolean);
+    //       const email = {
+    //         email: usuario.email,
+    //         nombre: usuario.nombre,
+    //         cc: ccList,
+    //       };
+    //       await this.mail.sendNotification(email, cartas);
+    //     }),
+    //   ),
+    // );
 
-    const tasks = usuarios.flatMap((usuario) =>
-      Array.from(gruposCC.entries()).map(([ccKey, cartas]) =>
-        limit(async () => {
-          const ccList = ccKey.split(';').filter(Boolean);
-          const email = {
-            email: usuario.email,
-            nombre: usuario.nombre,
-            cc: ccList,
-          };
-          await this.mail.sendNotification(email, cartas);
-        }),
-      ),
-    );
-
-    await Promise.all(tasks);
+    // await Promise.all(tasks);
     // await Promise.all(
     //   usuarios.map((usuario) =>
     //     Promise.all(

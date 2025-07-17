@@ -277,7 +277,8 @@ export class CardsService {
       return;
     }
 
-    const { default: pLimit } = await import('p-limit');
+    const pLimit = (await import('p-limit')).default;
+
     const limit = pLimit(3);
     await Promise.all(
       usuarios.map((usuario) =>
@@ -339,7 +340,8 @@ export class CardsService {
     });
     console.log(usuarios.length);
 
-    const { default: pLimit } = await import('p-limit');
+    const pLimit = (await import('p-limit')).default;
+
     const limit = pLimit(3);
 
     await Promise.all(
@@ -406,7 +408,8 @@ export class CardsService {
       },
     });
     console.log(usuarios.length);
-    const { default: pLimit } = await import('p-limit');
+
+    const pLimit = (await import('p-limit')).default;
     const limit = pLimit(3);
 
     await Promise.all(

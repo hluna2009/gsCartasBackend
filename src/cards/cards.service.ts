@@ -176,6 +176,68 @@ export class CardsService {
       email: 'zuiersadien@gmail.com',
       nombre: 'Test',
     });
+
+    const ahora = new Date();
+    const hace24Horas = subHours(ahora, 24);
+
+    const usuarios = await this.prisma.usuario.findMany({
+      where: {
+        areaId: { notIn: [17, 16, 1] },
+        jefe: 'no',
+      },
+      include: {
+        area: true,
+        subArea: {
+          include: {
+            cartas: {
+              where: { createdAt: { gte: hace24Horas, lte: ahora } },
+              include: {
+                Destinatario: true,
+                cartaAnterior: true,
+                respuestas: true,
+                areaResponsable: true,
+                subArea: true,
+                temaRelacion: true,
+                empresa: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    console.log(usuarios.length);
+    const { default: pLimit } = await import('p-limit');
+    const limit = pLimit(3);
+
+    await Promise.all(
+      usuarios.map((usuario) =>
+        limit(async () => {
+          const cartasUltimas24Horas = usuario.subArea?.cartas ?? [];
+
+          console.log(cartasUltimas24Horas.length, usuario.nombre);
+
+          if (cartasUltimas24Horas.length === 0) {
+            this.logger.debug(`Sin cartas para ${usuario.nombre} esta semana`);
+            return;
+          }
+
+          try {
+            return;
+            await this.mail.sendRegistrosDiarios(
+              usuario,
+              cartasUltimas24Horas,
+              'subarea',
+            );
+            this.logger.log(`Correo enviado a ${usuario.email}`);
+          } catch (err) {
+            this.logger.error(
+              `Error al enviar a ${usuario.email}: ${err.message}`,
+            );
+          }
+        }),
+      ),
+    );
+    return usuarios;
   }
   @Cron(CronExpression.EVERY_DAY_AT_10AM, {
     name: 'resumenCartas',

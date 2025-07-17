@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  HttpException,
 } from '@nestjs/common';
 import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
@@ -90,17 +91,37 @@ export class CardsController {
     return this.cardsService.findAllPendientes(+subareaId, paginationDto);
   }
 
+  @Get('prueba')
+  async prueba() {
+    try {
+      return await this.cardsService.prueba();
+    } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
+  }
   @Get('resumenCartasEstablecidas')
   async resumenCartasEstablecidas() {
-    return this.cardsService.resumenCartasEstablecidas();
+    try {
+      return await this.cardsService.resumenCartasEstablecidas();
+    } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
   }
   @Get('enviosDiariosPorJefatura')
   async resumenCartasEmision() {
-    return this.cardsService.enviosDiariosPorJefatura();
+    try {
+      return await this.cardsService.enviosDiariosPorJefatura();
+    } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
   }
   @Get('enviarCorreoRegistrosDiariosPorSubArea')
   async resumenCartasPartida() {
-    return this.cardsService.enviarCorreoRegistrosDiariosPorSubArea();
+    try {
+      return await this.cardsService.enviarCorreoRegistrosDiariosPorSubArea();
+    } catch (error) {
+      throw new HttpException(error.message, 500);
+    }
   }
 
   @Get(':id')

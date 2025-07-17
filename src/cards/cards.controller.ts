@@ -90,6 +90,19 @@ export class CardsController {
     return this.cardsService.findAllPendientes(+subareaId, paginationDto);
   }
 
+  @Get('resumenCartasEstablecidas')
+  async resumenCartasEstablecidas() {
+    return this.cardsService.resumenCartasEstablecidas();
+  }
+  @Get('enviosDiariosPorJefatura')
+  async resumenCartasEmision() {
+    return this.cardsService.enviosDiariosPorJefatura();
+  }
+  @Get('enviarCorreoRegistrosDiariosPorSubArea')
+  async resumenCartasPartida() {
+    return this.cardsService.enviarCorreoRegistrosDiariosPorSubArea();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Obtener una Carta por ID' })
   @ApiResponse({ status: 200, description: 'Carta obtenida exitosamente' })

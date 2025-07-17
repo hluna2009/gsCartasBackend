@@ -177,7 +177,10 @@ export class CardsService {
       nombre: 'Test',
     });
   }
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_DAY_AT_10AM, {
+    name: 'resumenCartas',
+    timeZone: 'America/Lima',
+  })
   async resumenCartasEstablecidas(): Promise<void> {
     this.logger.debug('Iniciando resumen de cartas establecidas');
 
@@ -186,6 +189,8 @@ export class CardsService {
       where: { areaId: { in: areaIds } },
       include: { subArea: true, area: true },
     });
+
+    console.log(usuarios.length);
 
     const ahora = new Date();
     const hace24Horas = subHours(ahora, 24);
@@ -236,7 +241,10 @@ export class CardsService {
     );
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_DAY_AT_10AM, {
+    name: 'enviosJefatura',
+    timeZone: 'America/Lima',
+  })
   async enviosDiariosPorJefatura() {
     this.logger.debug(`Iniciando envío de correos diarios por jefatura`);
 
@@ -267,6 +275,8 @@ export class CardsService {
         },
       },
     });
+    console.log(usuarios.length);
+
     const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
 
@@ -298,7 +308,10 @@ export class CardsService {
     );
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  @Cron(CronExpression.EVERY_DAY_AT_10AM, {
+    name: 'enviosSubArea',
+    timeZone: 'America/Lima',
+  })
   async enviarCorreoRegistrosDiariosPorSubArea(): Promise<void> {
     this.logger.debug('Iniciando envío de registros diarios por sub‑área');
 
@@ -330,6 +343,7 @@ export class CardsService {
         },
       },
     });
+    console.log(usuarios.length);
     const { default: pLimit } = await import('p-limit');
     const limit = pLimit(3);
 

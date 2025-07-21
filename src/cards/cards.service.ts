@@ -247,10 +247,13 @@ export class CardsService {
     return usuarios;
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM, {
-    name: 'resumenCartas',
-    timeZone: 'America/Lima',
-  })
+  @Cron(CronExpression.EVERY_DAY_AT_10AM)
+  async enviarResumen() {
+    await this.resumenCartasEstablecidas();
+    await this.enviarCorreoRegistrosDiariosPorSubArea();
+    await this.enviosDiariosPorJefatura();
+  }
+
   async resumenCartasEstablecidas(): Promise<void> {
     this.logger.debug('Iniciando resumen de cartas establecidas');
 
@@ -320,10 +323,6 @@ export class CardsService {
     await ejecutarConLimite();
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM, {
-    name: 'enviosJefatura',
-    timeZone: 'America/Lima',
-  })
   async enviosDiariosPorJefatura() {
     this.logger.debug(`Iniciando envío de correos diarios por jefatura`);
 
@@ -391,10 +390,6 @@ export class CardsService {
     }
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_10AM, {
-    name: 'enviosSubArea',
-    timeZone: 'America/Lima',
-  })
   async enviarCorreoRegistrosDiariosPorSubArea(): Promise<void> {
     this.logger.debug('Iniciando envío de registros diarios por sub‑área');
 
